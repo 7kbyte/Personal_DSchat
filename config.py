@@ -2,6 +2,7 @@
 全局配置 —— API Key、模型、窗口尺寸、存储路径
 """
 
+import json
 import os
 import sys
 
@@ -17,6 +18,10 @@ MODEL_OPTIONS = {
 
 # 思考强度（reasoning_effort）：high 默认，max 最强
 REASONING_EFFORT_OPTIONS = ["high", "max"]
+
+# 默认收藏夹名称
+DEFAULT_FOLDER_NAME = "默认收藏夹"
+DEFAULT_FOLDER_ID = "f_default"
 
 # ==================== 存储路径 ====================
 def get_app_dir() -> str:
@@ -53,6 +58,38 @@ def save_api_key(key: str):
     with open(get_key_path(), "w", encoding="utf-8") as f:
         f.write(DEEPSEEK_API_KEY)
 
+def get_config_path() -> str:
+    return os.path.join(get_app_dir(), "config.json")
+
+def load_sidebar_width() -> int:
+    """加载保存的侧栏宽度"""
+    path = get_config_path()
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                w = data.get("sidebar_width", SIDEBAR_WIDTH)
+                return max(180, min(500, int(w)))
+    except Exception:
+        pass
+    return SIDEBAR_WIDTH
+
+def save_sidebar_width(width: int):
+    """保存侧栏宽度"""
+    path = get_config_path()
+    data = {}
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+    except Exception:
+        pass
+    data["sidebar_width"] = int(width)
+    d = get_app_dir()
+    os.makedirs(d, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+
 def get_assets_dir() -> str:
     """资源目录：开发时用 assets/，打包后用 exe 旁边的 assets/"""
     if getattr(sys, "frozen", False):
@@ -61,9 +98,11 @@ def get_assets_dir() -> str:
 
 # ==================== 窗口尺寸 ====================
 TITLE = "💬 DeepSeek Chat"
-APP_VERSION = "v1.0"
+APP_VERSION = "v2.1"
 
-WIN_WIDTH  = 980
-WIN_HEIGHT = 660
+WIN_WIDTH  = 1280
+WIN_HEIGHT = 840
 WIN_MIN_W  = 720
 WIN_MIN_H  = 460
+
+SIDEBAR_WIDTH = 260
