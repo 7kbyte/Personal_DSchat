@@ -125,7 +125,7 @@ def get_assets_dir() -> str:
 
 # ==================== 窗口尺寸 ====================
 TITLE = "💬 DeepSeek Chat"
-APP_VERSION = "v2.4.1"
+APP_VERSION = "v2.4.2"
 
 WIN_WIDTH  = 1280
 WIN_HEIGHT = 840
