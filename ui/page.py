@@ -499,6 +499,26 @@ function renderMessages() {
         return '<div class="msg ' + m.role + '" oncontextmenu="onMsgCtx(event,' + i + ')"><div class="msg-side"><div class="avatar">' + avatar + '</div><div class="msg-time">' + fmtTime(m.timestamp) + '</div></div><div class="bubble">' + r + html + '</div></div>';
     }).join('');
     container.scrollTop = container.scrollHeight;
+    addCodeCopyButtons();
+}
+
+// ==================== 代码块复制 ====================
+function addCodeCopyButtons() {
+    document.querySelectorAll('.bubble pre').forEach(pre => {
+        if (pre.querySelector('.code-copy-btn')) return;
+        pre.style.position = 'relative';
+        var btn = document.createElement('button');
+        btn.className = 'code-copy-btn';
+        btn.textContent = '📋';
+        btn.title = '复制代码';
+        btn.onclick = function() {
+            var code = pre.textContent || '';
+            pywebview.api.copyToClipboard(code);
+            btn.textContent = '✅';
+            setTimeout(function() { btn.textContent = '📋'; }, 1500);
+        };
+        pre.appendChild(btn);
+    });
 }
 
 // ==================== 发送消息 ====================
@@ -594,6 +614,7 @@ function updateLastMessage() {
     }
     lastEl.innerHTML = r + html;
     container.scrollTop = container.scrollHeight;
+    addCodeCopyButtons();
 }
 
 // ==================== 右键菜单 ====================

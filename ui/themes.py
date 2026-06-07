@@ -76,7 +76,10 @@ body{font-family:"SF Pro Display","PingFang SC","Helvetica Neue","Microsoft YaHe
 .msg-time{font-size:10px;color:var(--sub);opacity:0;transition:opacity .2s;white-space:nowrap}
 .msg:hover .msg-time{opacity:.7}
 .bubble p{margin:4px 0}
-.bubble pre{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:14px;overflow-x:auto;margin:8px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;user-select:text}
+.bubble pre{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:14px;overflow-x:auto;margin:8px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;user-select:text;position:relative}
+.code-copy-btn{position:absolute;top:8px;right:8px;padding:3px 7px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;transition:all .15s;opacity:0;line-height:1}
+.bubble pre:hover .code-copy-btn{opacity:1}
+.code-copy-btn:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4)}
 .bubble code{font-family:"SF Mono","Menlo","Consolas","Cascadia Code",monospace;font-size:13px}
 .bubble :not(pre)>code{background:var(--accent-soft);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent)}
 .bubble ul,.bubble ol{margin:6px 0;padding-left:22px}
