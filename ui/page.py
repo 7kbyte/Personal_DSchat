@@ -31,6 +31,9 @@ PAGE = r"""<!DOCTYPE html>
         <p>Powered by DeepSeek API</p>
     </div>
     <button class="btn-new" onclick="newConv()">＋ 新对话</button>
+    <div class="pinned-section" id="pinnedSection" style="display:none">
+        <div class="pinned-list" id="pinnedList"></div>
+    </div>
     <div class="folder-list" id="folderList"></div>
     <div class="btn-new-folder" onclick="showFolderModal()">📁 ＋ 新建收藏夹</div>
     <div class="sidebar-settings">
@@ -337,7 +340,9 @@ function renderDrawerConvs() {
         + ' ondragstart="onDrawerConvDragStart(event,\'' + c.id + '\')"'
         + ' ondragend="onDragEnd(event)">'
         + (c.pinned ? '<span class="pin-icon">📌</span>' : '')
-        + escapeHtml(c.title || '新对话').slice(0, 30) + '</div>'
+        + '<span class="conv-name">' + escapeHtml(c.title || '新对话').slice(0, 30) + '</span>'
+        + '<span class="conv-time">' + fmtRelative(c.updatedAt) + '</span>'
+        + '</div>'
     ).join('');
 }
 
@@ -402,16 +407,15 @@ function deleteFolder() {
 function newConv() {
     const cur = getCurrent();
     if (cur && (!cur.messages || cur.messages.length === 0)) { document.getElementById('input').focus(); return; }
-    const folderId = state.drawerOpen ? state.drawerFolderId : 'f_default';
     const id = Date.now().toString() + Math.random().toString(36).slice(2,8);
-    state.conversations.unshift({ id, title: '新对话', messages: [], folderId, pinned: false });
+    state.conversations.unshift({ id, title: '新对话', messages: [], pinned: false });
     state.currentId = id;
     renderAll(); save();
 }
 
 function switchConv(id) {
     state.currentId = id;
-    renderMessages(); renderFolderList();
+    renderMessages(); renderPinned(); renderFolderList();
     if (state.drawerOpen) renderDrawerConvs();
 }
 
@@ -420,7 +424,7 @@ function getCurrent() { return state.conversations.find(c => c.id === state.curr
 function togglePin() {
     const conv = state.conversations.find(c => c.id === state.ctxConvId);
     if (conv) conv.pinned = !conv.pinned;
-    renderDrawerConvs(); save(); hideAllMenus();
+    renderPinned(); renderDrawerConvs(); save(); hideAllMenus();
 }
 
 function moveConvToFolder(convId, targetFolderId) {
@@ -457,7 +461,24 @@ function deleteConvFromDrawer() {
 }
 
 // ==================== 渲染 ====================
-function renderAll() { renderFolderList(); renderMessages(); if (state.drawerOpen) renderDrawer(); }
+function renderAll() { renderPinned(); renderFolderList(); renderMessages(); if (state.drawerOpen) renderDrawer(); }
+
+function renderPinned() {
+    const pinned = state.conversations.filter(c => c.pinned && c.messages && c.messages.length > 0);
+    const section = document.getElementById('pinnedSection');
+    const list = document.getElementById('pinnedList');
+    if (pinned.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = pinned.map(c => {
+        const folder = state.folders.find(f => f.id === c.folderId);
+        const folderName = folder ? (folder.icon + ' ' + folder.name) : '';
+        return '<div class="pinned-item' + (c.id === state.currentId ? ' active' : '') + '" onclick="switchConv(\'' + c.id + '\')" oncontextmenu="onPinnedCtx(event,\'' + c.id + '\')">'
+            + '<span class="pin-icon">📌</span>' + escapeHtml(c.title || '新对话').slice(0, 20)
+            + '<span class="pinned-time">' + fmtRelative(c.updatedAt) + '</span>'
+            + (folderName ? '<span class="pinned-folder">' + escapeHtml(folderName) + '</span>' : '')
+            + '</div>';
+    }).join('');
+}
 
 function renderMessages() {
     const container = document.getElementById('messages');
@@ -475,7 +496,7 @@ function renderMessages() {
             const rid = 'reasoning_' + i;
             r = '<div class="reasoning-toggle" onclick="var c=document.getElementById(\'' + rid + '\');var t=this;c.classList.toggle(\'open\');t.textContent=c.classList.contains(\'open\')?\'🧠 收起思考过程\':\'🧠 查看思考过程\';">🧠 查看思考过程</div><div class="reasoning-content" id="' + rid + '">' + escapeHtml(m.reasoning_content) + '</div>';
         }
-        return '<div class="msg ' + m.role + '" oncontextmenu="onMsgCtx(event,' + i + ')"><div class="avatar">' + avatar + '</div><div class="bubble">' + r + html + '</div></div>';
+        return '<div class="msg ' + m.role + '" oncontextmenu="onMsgCtx(event,' + i + ')"><div class="msg-side"><div class="avatar">' + avatar + '</div><div class="msg-time">' + fmtTime(m.timestamp) + '</div></div><div class="bubble">' + r + html + '</div></div>';
     }).join('');
     container.scrollTop = container.scrollHeight;
 }
@@ -489,9 +510,13 @@ async function send() {
     input.value = ''; autoResize();
     const conv = getCurrent();
     if (!conv) return;
-    conv.messages.push({ role: 'user', content: text });
-    if (conv.messages.length === 1) conv.title = text.slice(0, 30) + (text.length > 30 ? '...' : '');
+    conv.messages.push({ role: 'user', content: text, timestamp: Date.now() });
+    if (conv.messages.length === 1) {
+        conv.title = text.slice(0, 30) + (text.length > 30 ? '...' : '');
+        if (!conv.folderId) conv.folderId = state.drawerOpen ? state.drawerFolderId : 'f_default';
+    }
     conv.messages.push({ role: 'assistant', content: '思考中...' });
+    conv.updatedAt = Date.now();
     if (state.drawerOpen && conv.folderId !== state.drawerFolderId) conv.folderId = state.drawerFolderId;
     renderAll(); save();
     state.loading = true;
@@ -530,6 +555,24 @@ window._onStreamDone = function(data) {
     renderAll(); save();
 };
 
+// ==================== 时间格式化 ====================
+function fmtTime(ts) {
+    var d = new Date(ts), now = new Date();
+    var hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
+    var time = hh + ':' + mm;
+    if (d.toDateString() === now.toDateString()) return time;
+    return String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + ' ' + time;
+}
+
+function fmtRelative(ts) {
+    var diff = Date.now() - ts;
+    if (diff < 60000) return '刚刚';
+    if (diff < 3600000) return Math.floor(diff/60000) + '分钟前';
+    var d = new Date(ts), now = new Date();
+    if (d.toDateString() === now.toDateString()) return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    return String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
+}
+
 function updateLastMessage() {
     const container = document.getElementById('messages');
     const conv = getCurrent();
@@ -558,6 +601,16 @@ function onMsgCtx(e, idx) {
 }
 function onFolderCtx(e, folderId) { e.preventDefault(); state.ctxFolderId = folderId; document.getElementById('deleteFolderItem').style.display = folderId === 'f_default' ? 'none' : ''; showMenu('folderCtxMenu', e.clientX, e.clientY); }
 function onDrawerConvCtx(e, convId) { e.preventDefault(); state.ctxConvId = convId; showMenu('drawerCtxMenu', e.clientX, e.clientY); }
+function onPinnedCtx(e, convId) {
+    e.preventDefault();
+    state.ctxConvId = convId;
+    const conv = state.conversations.find(c => c.id === convId);
+    const title = conv ? (conv.title || '新对话') : '此对话';
+    showConfirm('取消置顶', '确定将 "' + title + '" 取消置顶吗？', '取消置顶', function() {
+        if (conv) conv.pinned = false;
+        renderPinned(); renderDrawerConvs(); save();
+    });
+}
 
 function showMenu(id, x, y) {
     hideAllMenus();

@@ -10,6 +10,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Microsoft YaHei,sans-
 .sidebar-header p{font-size:11px;color:var(--sub);margin-top:2px}
 .btn-new{margin:6px 14px 4px;padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px;cursor:pointer;transition:all .15s;text-align:center}
 .btn-new:hover{background:var(--surface-secondary)}
+.pinned-section{margin:0 6px 6px;padding:6px 6px 2px;background:var(--accent-soft);border-radius:10px;border:1px solid var(--accent-soft)}
+.pinned-list{padding:0}
+.pinned-item{padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text);margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .15s;display:flex;align-items:center;gap:6px}
+.pinned-item:hover{background:rgba(255,255,255,.15)}
+.pinned-item.active{color:var(--accent);font-weight:600}
+.pinned-item .pin-icon{font-size:11px;flex-shrink:0;opacity:.8}
+.pinned-time{font-size:10px;color:var(--sub);margin-left:6px;flex-shrink:0;opacity:.7}
+.pinned-folder{font-size:10px;color:var(--sub);margin-left:auto;flex-shrink:0;opacity:.7}
 .folder-list{flex:1;overflow-y:auto;padding:4px 6px}
 .folder-item{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--text);margin:1px 0;display:flex;align-items:center;gap:8px;transition:all .15s;user-select:none}
 .folder-item:hover{background:var(--accent-soft)}
@@ -45,6 +53,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Microsoft YaHei,sans-
 .drawer-conv-item:hover{background:var(--accent-soft);color:var(--text)}
 .drawer-conv-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
 .drawer-conv-item .pin-icon{font-size:12px;flex-shrink:0}
+.drawer-conv-item .conv-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drawer-conv-item .conv-time{font-size:10px;color:var(--sub);flex-shrink:0;margin-left:4px;opacity:.7}
 .drawer-conv-item.dragging{opacity:.4}
 .drawer-empty{padding:40px 20px;text-align:center;color:var(--sub);font-size:13px}
 .main{flex:1;display:flex;flex-direction:column;min-width:0;transition:background .5s}
@@ -56,11 +66,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Microsoft YaHei,sans-
 .msg.user{align-self:flex-end;flex-direction:row-reverse}
 .msg.assistant{align-self:flex-start}
 .avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;font-weight:600}
+.msg-side .avatar{width:32px;height:32px}
 .msg.user .avatar{background:var(--accent);color:var(--on-accent)}
 .msg.assistant .avatar{background:var(--accent-alt);color:#fff}
 .bubble{padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.65;word-break:break-word;box-shadow:var(--shadow);user-select:text;-webkit-user-select:text}
 .msg.user .bubble{background:var(--user-bubble);border-bottom-right-radius:4px}
 .msg.assistant .bubble{background:var(--ai-bubble);border-bottom-left-radius:4px}
+.msg-side{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+.msg-time{font-size:10px;color:var(--sub);opacity:0;transition:opacity .2s;white-space:nowrap}
+.msg:hover .msg-time{opacity:.7}
 .bubble p{margin:4px 0}
 .bubble pre{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:14px;overflow-x:auto;margin:8px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;user-select:text}
 .bubble code{font-family:Cascadia Code,Fira Code,Consolas,monospace;font-size:13px}
