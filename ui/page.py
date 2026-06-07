@@ -551,12 +551,16 @@ window._onStreamDone = function(data) {
     if (!data.ok) {
         const lastMsg = conv.messages[conv.messages.length - 1];
         if (lastMsg && lastMsg.role === 'assistant') { lastMsg.content = '❌ 错误: ' + (data.error || '未知错误'); lastMsg.reasoning_content = ''; }
+    } else {
+        const lastMsg = conv.messages[conv.messages.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant') lastMsg.timestamp = Date.now();
     }
     renderAll(); save();
 };
 
 // ==================== 时间格式化 ====================
 function fmtTime(ts) {
+    if (!ts) return '';
     var d = new Date(ts), now = new Date();
     var hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
     var time = hh + ':' + mm;
@@ -565,6 +569,7 @@ function fmtTime(ts) {
 }
 
 function fmtRelative(ts) {
+    if (!ts) return '';
     var diff = Date.now() - ts;
     if (diff < 60000) return '刚刚';
     if (diff < 3600000) return Math.floor(diff/60000) + '分钟前';
