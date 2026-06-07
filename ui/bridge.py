@@ -8,7 +8,7 @@ import threading
 import traceback
 import webview
 
-from config import load_api_key, save_api_key, load_sidebar_width, save_sidebar_width
+from config import load_api_key, save_api_key, load_sidebar_width, save_sidebar_width, load_theme, save_theme
 from api.deepseek import chat_stream, verify_api_key
 from storage.history import save as save_history, load as load_history
 
@@ -48,6 +48,13 @@ class Bridge:
 
     def setSidebarWidth(self, width: int):
         save_sidebar_width(int(width))
+
+    # ---- 主题 ----
+    def getTheme(self) -> str:
+        return load_theme()
+
+    def setTheme(self, theme: str):
+        save_theme(theme)
 
     # ---- History ----
     def loadState(self) -> str:

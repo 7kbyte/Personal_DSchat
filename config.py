@@ -90,6 +90,33 @@ def save_sidebar_width(width: int):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
 
+def load_theme() -> str:
+    """加载保存的主题名称，默认 sunset"""
+    path = get_config_path()
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f).get("theme", "sunset")
+    except Exception:
+        pass
+    return "sunset"
+
+def save_theme(theme: str):
+    """保存主题名称"""
+    path = get_config_path()
+    data = {}
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+    except Exception:
+        pass
+    data["theme"] = theme
+    d = get_app_dir()
+    os.makedirs(d, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+
 def get_assets_dir() -> str:
     """资源目录：开发时用 assets/，打包后用 exe 旁边的 assets/"""
     if getattr(sys, "frozen", False):
@@ -98,7 +125,7 @@ def get_assets_dir() -> str:
 
 # ==================== 窗口尺寸 ====================
 TITLE = "💬 DeepSeek Chat"
-APP_VERSION = "v2.1"
+APP_VERSION = "v2.2"
 
 WIN_WIDTH  = 1280
 WIN_HEIGHT = 840

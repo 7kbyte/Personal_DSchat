@@ -1,3 +1,7 @@
+"""HTML page for DeepSeek Chat"""
+
+from ui.themes import THEME_CSS
+
 PAGE = r"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -14,272 +18,9 @@ PAGE = r"""<!DOCTYPE html>
 <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
 
 <style>
-:root {
-    --bg: #f5f5f5;
-    --sidebar-bg: #f0f0f0;
-    --user-bubble: #d9fdd3;
-    --ai-bubble: #ffffff;
-    --text: #1a1a1a;
-    --sub: #667781;
-    --border: #e0e0e0;
-    --accent: #07c160;
-    --accent-hover: #06ad56;
-    --input-bg: #ffffff;
-    --code-bg: #1e1e2e;
-    --code-fg: #cdd6f4;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08);
-    --danger: #e74c3c;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
-    background: var(--bg); color: var(--text); height: 100vh; display: flex;
-    overflow: hidden; font-size: 14px; position: relative;
-}
-
-/* ========== 侧边栏 ========== */
-.sidebar {
-    width: 260px; background: var(--sidebar-bg); display: flex;
-    flex-direction: column; border-right: 1px solid var(--border); flex-shrink: 0; z-index: 10;
-    position: relative;
-}
-.sidebar-header { padding: 18px 16px 10px; }
-.sidebar-header h1 { font-size: 16px; font-weight: 700; color: var(--text); }
-.sidebar-header p { font-size: 11px; color: var(--sub); margin-top: 2px; }
-.btn-new {
-    margin: 6px 14px 4px; padding: 8px 14px; border: 1px solid var(--border);
-    border-radius: 8px; background: #fff; color: var(--text); font-size: 13px;
-    cursor: pointer; transition: .15s; text-align: center;
-}
-.btn-new:hover { background: #e8e8e8; }
-
-/* 文件夹列表 */
-.folder-list { flex:1; overflow-y:auto; padding: 4px 6px; }
-.folder-item {
-    padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
-    color: var(--text); margin: 1px 0; display: flex; align-items: center;
-    gap: 8px; transition: .1s; user-select: none;
-}
-.folder-item:hover { background: rgba(0,0,0,0.05); }
-.folder-item.active { background: rgba(7,193,96,0.1); color: var(--accent); font-weight: 600; }
-.folder-item .folder-icon { font-size: 16px; flex-shrink: 0; }
-.folder-item .folder-name { flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.folder-item .folder-count {
-    font-size: 11px; color: var(--sub); background: rgba(0,0,0,0.06);
-    padding: 1px 7px; border-radius: 10px; flex-shrink: 0;
-}
-.folder-item.drag-over { background: rgba(7,193,96,0.15); border: 1px dashed var(--accent); }
-.folder-item.dragging { opacity: 0.4; }
-
-.btn-new-folder {
-    margin: 4px 6px 8px; padding: 6px 12px; border: 1px dashed var(--border);
-    border-radius: 6px; background: transparent; color: var(--sub); font-size: 12px;
-    cursor: pointer; transition: .15s; text-align: center;
-}
-.btn-new-folder:hover { background: rgba(0,0,0,0.03); color: var(--text); }
-
-.sidebar-settings { padding: 10px 14px 14px; border-top: 1px solid var(--border); }
-.sidebar-settings label { font-size: 12px; color: var(--sub); display: block; margin-bottom: 4px; }
-.sidebar-settings select, .sidebar-settings .think-row {
-    width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
-    background: #fff; font-size: 12px; margin-bottom: 8px; outline: none;
-}
-.think-row { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
-.think-row input { cursor: pointer; }
-.sidebar-footer { padding: 8px 14px; font-size: 10px; color: #bbb; text-align: center; border-top:1px solid var(--border); }
-
-/* 侧栏拖拽调整宽度 */
-.sidebar-resize-handle {
-    position: absolute; right: -3px; top: 0; bottom: 0; width: 6px;
-    cursor: col-resize; z-index: 20; background: transparent;
-    transition: background .15s;
-}
-.sidebar-resize-handle:hover, .sidebar-resize-handle.active { background: rgba(7,193,96,0.3); }
-
-/* ========== 抽屉面板 ========== */
-.drawer-overlay {
-    position: fixed; left: 260px; top: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.15); z-index: 50;
-    display: none;
-}
-.drawer-panel {
-    position: fixed; left: 260px; top: 0; bottom: 0; width: 300px;
-    background: #fff; z-index: 51; display: none; flex-direction: column;
-    box-shadow: 2px 0 16px rgba(0,0,0,0.1); border-right: 1px solid var(--border);
-    transform: translateX(-20px); opacity: 0; transition: transform .2s, opacity .2s;
-}
-.drawer-panel.open { transform: translateX(0); opacity: 1; }
-.drawer-header {
-    display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px;
-    border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.drawer-header .folder-title { flex:1; font-size: 15px; font-weight: 600; display:flex; align-items:center; gap:6px; }
-.drawer-header .folder-title .count { font-size: 12px; color: var(--sub); font-weight: 400; }
-.drawer-btn-close {
-    width: 28px; height: 28px; border: none; background: none; font-size: 18px;
-    cursor: pointer; color: var(--sub); border-radius: 6px; display: flex;
-    align-items: center; justify-content: center; transition: .1s;
-}
-.drawer-btn-close:hover { background: rgba(0,0,0,0.06); color: var(--text); }
-
-.drawer-search {
-    padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.drawer-search input {
-    width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
-    font-size: 12px; outline: none; background: #f8f8f8;
-}
-.drawer-search input:focus { border-color: var(--accent); background: #fff; }
-
-.drawer-conv-list { flex:1; overflow-y: auto; padding: 4px 6px; }
-.drawer-conv-item {
-    padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
-    color: var(--sub); margin: 2px 0; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; transition: .1s; display: flex; align-items: center; gap: 4px;
-}
-.drawer-conv-item:hover { background: rgba(0,0,0,0.04); }
-.drawer-conv-item.active { background: rgba(7,193,96,0.08); color: var(--accent); font-weight: 600; }
-.drawer-conv-item .pin-icon { font-size: 12px; flex-shrink: 0; }
-.drawer-conv-item.dragging { opacity: 0.4; }
-
-.drawer-empty { padding: 40px 20px; text-align: center; color: var(--sub); font-size: 13px; }
-
-/* ========== 主区域 ========== */
-.main { flex:1; display:flex; flex-direction:column; min-width:0; }
-.chat-header {
-    padding: 10px 20px; border-bottom: 1px solid var(--border);
-    font-size: 12px; color: var(--sub); display: flex; align-items: center; gap: 8px; background:#fff;
-}
-.chat-header .dot { width:7px; height:7px; border-radius:50%; background: var(--accent); }
-.messages { flex:1; overflow-y:auto; padding: 16px 20px; display:flex; flex-direction:column; gap:14px;
-    user-select: text; -webkit-user-select: text; }
-
-/* 消息气泡 */
-.msg { display:flex; gap:10px; max-width:82%; animation: fadeIn .2s; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
-.msg.user { align-self:flex-end; flex-direction:row-reverse; }
-.msg.assistant { align-self:flex-start; }
-.avatar {
-    width:32px; height:32px; border-radius:50%; display:flex; align-items:center;
-    justify-content:center; font-size:14px; flex-shrink:0; font-weight:600;
-}
-.msg.user .avatar { background: var(--accent); color: #fff; }
-.msg.assistant .avatar { background: #e8e8e8; color: #555; }
-
-.bubble {
-    padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.65;
-    word-break: break-word; box-shadow: var(--shadow);
-    user-select: text; -webkit-user-select: text;
-}
-.msg.user .bubble { background: var(--user-bubble); border-bottom-right-radius: 4px; }
-.msg.assistant .bubble { background: var(--ai-bubble); border-bottom-left-radius: 4px; }
-.bubble p { margin: 4px 0; }
-.bubble pre { background: var(--code-bg); color: var(--code-fg); border-radius: 8px;
-    padding: 14px; overflow-x: auto; margin: 8px 0; font-size: 13px; line-height: 1.5;
-    white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; }
-.bubble code { font-family: 'Cascadia Code','Fira Code',Consolas,monospace; font-size: 13px; }
-.bubble :not(pre) > code { background: rgba(0,0,0,0.06); padding: 2px 5px; border-radius: 4px;
-    font-size: 12px; }
-.bubble ul, .bubble ol { margin: 6px 0; padding-left: 22px; }
-.bubble li { margin: 2px 0; }
-.bubble h1,.bubble h2,.bubble h3,.bubble h4 { margin: 10px 0 4px; }
-.bubble h1 { font-size: 1.3em; } .bubble h2 { font-size: 1.15em; } .bubble h3 { font-size: 1.05em; }
-.bubble blockquote { border-left: 3px solid var(--accent); margin: 6px 0; padding: 4px 12px;
-    color: #666; background: rgba(0,0,0,0.02); border-radius: 0 4px 4px 0; }
-.bubble table { border-collapse:collapse; margin:6px 0; width:100%; }
-.bubble th,.bubble td { border:1px solid #ddd; padding:6px 10px; text-align:left; font-size:13px; }
-.bubble th { background:#f7f7f7; font-weight:600; }
-.bubble img { max-width:100%; border-radius:6px; }
-.katex-display { overflow-x:auto; overflow-y:hidden; padding:4px 0; }
-
-.reasoning-toggle {
-    cursor: pointer; color: var(--accent); font-size: 12px; font-weight: 600;
-    user-select: none; padding: 4px 0; display: inline-flex; align-items: center; gap: 4px;
-}
-.reasoning-content {
-    margin-top: 6px; padding: 10px 14px; background: rgba(0,0,0,0.03);
-    border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0;
-    font-size: 12px; color: #666; line-height: 1.6; display: none; max-height: 300px; overflow-y: auto;
-}
-.reasoning-content.open { display: block; }
-
-/* 输入区 */
-.input-area { padding: 12px 20px; border-top: 1px solid var(--border); background: #fff; }
-.input-row { display:flex; gap:10px; align-items:flex-end; }
-.input-row textarea {
-    flex:1; border:1px solid var(--border); border-radius:12px; padding:10px 14px;
-    font-size:14px; font-family:inherit; resize:none; outline:none; min-height:42px;
-    max-height:140px; line-height:1.5; transition:border-color .2s;
-}
-.input-row textarea:focus { border-color: var(--accent); }
-.btn-send {
-    width:42px; height:42px; border-radius:10px; border:none; background: var(--accent);
-    color:#fff; font-size:16px; cursor:pointer; transition:.15s; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-}
-.btn-send:hover { background: var(--accent-hover); transform:scale(1.05); }
-.btn-send:disabled { background:#ccc; cursor:not-allowed; transform:none; }
-
-/* 空状态 */
-.empty {
-    flex:1; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; color: var(--sub); gap: 8px; padding: 40px;
-}
-.empty .logo { font-size: 48px; }
-.empty h2 { font-size: 18px; color: var(--text); }
-.empty p { font-size: 13px; }
-
-/* 右键菜单 */
-.context-menu {
-    position:fixed; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.15);
-    padding:4px; z-index:999; display:none; min-width:140px;
-}
-.context-menu .item {
-    padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;
-    transition:background .1s;
-}
-.context-menu .item:hover { background: rgba(7,193,96,0.08); }
-.context-menu .item.danger { color: var(--danger); }
-.context-menu .item.danger:hover { background: rgba(231,76,60,0.08); }
-
-/* 模态框 */
-.modal-overlay {
-    position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:1000;
-    display:none; align-items:center; justify-content:center;
-}
-.modal {
-    background:#fff; border-radius:12px; padding:24px; max-width:400px; width:90%;
-    box-shadow:0 8px 32px rgba(0,0,0,0.18);
-}
-.modal h3 { margin-bottom:8px; }
-.modal p { color:var(--sub); font-size:13px; margin-bottom:16px; }
-.modal .btns { display:flex; gap:8px; justify-content:flex-end; }
-.modal .btns button {
-    padding:7px 18px; border-radius:6px; border:1px solid var(--border); cursor:pointer; font-size:13px;
-}
-.modal .btn-danger { background:var(--danger); color:#fff; border-color:var(--danger); }
-.modal input[type="text"], .modal input[type="password"] {
-    width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:6px;
-    font-size:13px; margin:8px 0; outline:none; box-sizing:border-box;
-}
-.modal input:focus { border-color: var(--accent); }
-
-/* 图标选择器 */
-.icon-picker { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
-.icon-picker span {
-    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-    font-size: 18px; border-radius: 6px; cursor: pointer; transition: .1s;
-    border: 2px solid transparent;
-}
-.icon-picker span:hover { background: rgba(0,0,0,0.06); }
-.icon-picker span.sel { border-color: var(--accent); background: rgba(7,193,96,0.1); }
-
-/* 滚动条 */
-::-webkit-scrollbar { width:5px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:#ccc; border-radius:3px; }
-::-webkit-scrollbar-thumb:hover { background:#aaa; }
+""" + THEME_CSS + r"""
 </style>
+</head>
 </head>
 <body>
 
@@ -293,20 +34,28 @@ body {
     <div class="folder-list" id="folderList"></div>
     <div class="btn-new-folder" onclick="showFolderModal()">📁 ＋ 新建收藏夹</div>
     <div class="sidebar-settings">
-        <label>模型选择</label>
-        <select id="modelSelect" onchange="onSettingsChange()">
-            <option value="deepseek-v4-pro">DeepSeek-V4 Pro</option>
-            <option value="deepseek-v4-flash">DeepSeek-V4 Flash</option>
-        </select>
-        <div class="think-row" onclick="toggleThink()">
-            <input type="checkbox" id="thinkToggle" checked onchange="onSettingsChange()">
-            <span>🧠 深度思考</span>
+        <div class="settings-row">
+            <select id="modelSelect" onchange="onSettingsChange()" style="flex:1">
+                <option value="deepseek-v4-pro">DS-V4 Pro</option>
+                <option value="deepseek-v4-flash">DS-V4 Flash</option>
+            </select>
+            <div class="think-row" onclick="toggleThink()" style="flex:1">
+                <input type="checkbox" id="thinkToggle" checked onchange="onSettingsChange()">
+                <span>🧠 深度思考</span>
+            </div>
         </div>
-        <label style="margin-top:8px">思考强度</label>
-        <select id="effortSelect" onchange="onSettingsChange()">
-            <option value="high">high（默认）</option>
-            <option value="max">max（最强）</option>
-        </select>
+        <div class="settings-row">
+            <select id="effortSelect" onchange="onSettingsChange()" style="flex:1">
+                <option value="high">high</option>
+                <option value="max">max</option>
+            </select>
+            <select id="themeSelect" onchange="setTheme(this.value)" style="flex:1">
+                <option value="sunset">🌅 暖阳橙</option>
+                <option value="sakura">🌸 樱花粉</option>
+                <option value="ocean">🌊 深海蓝</option>
+                <option value="cosmic">🌑 宇宙黑</option>
+            </select>
+        </div>
     </div>
     <div class="sidebar-footer">{VERSION} · 数据保存至本地</div>
     <div class="sidebar-resize-handle" id="resizeHandle"></div>
@@ -329,7 +78,7 @@ body {
 <div class="main">
     <div class="chat-header">
         <span class="dot"></span>
-        <span id="statusText">DeepSeek-V4 Pro · 🧠 深度思考</span>
+        <span id="statusText">DS-V4 Pro · 🧠 深度思考</span>
     </div>
     <div class="messages" id="messages">
         <div class="empty">
@@ -380,7 +129,7 @@ body {
         <p id="folderModalError" style="font-size:12px;color:var(--danger);display:none"></p>
         <div class="btns" style="margin-top:8px">
             <button onclick="closeFolderModal()">取消</button>
-            <button style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="submitFolder()">确认</button>
+            <button style="background:var(--accent);color: var(--on-accent);border-color:var(--accent)" onclick="submitFolder()">确认</button>
         </div>
     </div>
 </div>
@@ -417,7 +166,7 @@ body {
         <p id="apiKeyError" style="font-size:12px;color:var(--danger);display:none"></p>
         <div class="btns" style="margin-top:8px">
             <button onclick="closeApiKeyModal()">取消</button>
-            <button style="background:var(--accent);color:#fff;border-color:var(--accent)" onclick="submitApiKey()">确认</button>
+            <button style="background:var(--accent);color: var(--on-accent);border-color:var(--accent)" onclick="submitApiKey()">确认</button>
         </div>
     </div>
 </div>
@@ -494,6 +243,14 @@ async function init() {
         try {
             const w = await pywebview.api.getSidebarWidth();
             if (w) setSidebarWidth(w);
+        } catch(e) {}
+    }
+
+    // 加载保存的主题
+    if (window.pywebview && pywebview.api) {
+        try {
+            const theme = await pywebview.api.getTheme();
+            if (theme) { document.body.dataset.theme = theme; document.getElementById('themeSelect').value = theme; }
         } catch(e) {}
     }
 
@@ -958,6 +715,13 @@ document.addEventListener('mouseup', function() {
     const w = parseInt(getComputedStyle(document.querySelector('.sidebar')).width);
     if (pywebviewReady && pywebview.api) pywebview.api.setSidebarWidth(w);
 });
+
+// ==================== 主题切换 ====================
+function setTheme(name) {
+    document.body.dataset.theme = name || '';
+    document.getElementById('themeSelect').value = name || 'sunset';
+    if (pywebviewReady && pywebview.api) pywebview.api.setTheme(name || 'sunset');
+}
 
 // ==================== 启动 ====================
 window.addEventListener('pywebviewready', () => init());
