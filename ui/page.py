@@ -512,8 +512,10 @@ function addCodeCopyButtons() {
         btn.textContent = '📋';
         btn.title = '复制代码';
         btn.onclick = function() {
-            var code = pre.textContent || '';
-            pywebview.api.copyToClipboard(code);
+            var clone = pre.cloneNode(true);
+            var btnInClone = clone.querySelector('.code-copy-btn');
+            if (btnInClone) btnInClone.remove();
+            pywebview.api.copyToClipboard(clone.textContent || '');
             btn.textContent = '✅';
             setTimeout(function() { btn.textContent = '📋'; }, 1500);
         };
