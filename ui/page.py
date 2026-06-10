@@ -291,10 +291,11 @@ async function init() {
         } catch(e) {}
     }
 
-    // 恢复设置栏折叠状态
+    // 恢复设置栏折叠状态（通过 Python 端持久化）
     try {
-        if (localStorage.getItem('settings-collapsed') === '1') {
-            document.getElementById('settingsCard').classList.add('collapsed');
+        if (pywebviewReady && pywebview.api) {
+            const v = await pywebview.api.loadSetting('settings-collapsed');
+            if (v === '1') document.getElementById('settingsCard').classList.add('collapsed');
         }
     } catch(e) {}
 
@@ -858,8 +859,8 @@ function toggleThink() { const cb = document.getElementById('thinkToggle'); cb.c
 function toggleSettings() {
     var card = document.getElementById('settingsCard');
     card.classList.toggle('collapsed');
-    var collapsed = card.classList.contains('collapsed');
-    try { localStorage.setItem('settings-collapsed', collapsed ? '1' : '0'); } catch(e) {}
+    var v = card.classList.contains('collapsed') ? '1' : '0';
+    if (pywebviewReady && pywebview.api) pywebview.api.saveSetting('settings-collapsed', v);
 }
 function pickModel(btn) {
     document.querySelectorAll('#modelSeg .seg-btn').forEach(b => b.classList.remove('active'));

@@ -78,6 +78,14 @@ def save_theme(theme: str):
     """保存主题名称"""
     _update_config("theme", theme)
 
+def load_setting(key: str, default: str = "") -> str:
+    """加载通用字符串设置"""
+    return str(_read_config().get(key, default))
+
+def save_setting(key: str, value: str):
+    """保存通用字符串设置"""
+    _update_config(key, str(value))
+
 def save_temperature(temp: float):
     """保存温度设置"""
     _update_config("temperature", float(temp))
@@ -120,7 +128,7 @@ def get_assets_dir() -> str:
 
 # ==================== 窗口尺寸 ====================
 TITLE = "💬 DeepSeek Chat"
-APP_VERSION = "v3.0"
+APP_VERSION = "v3.0.1"
 
 WIN_WIDTH  = 1280
 WIN_HEIGHT = 840
