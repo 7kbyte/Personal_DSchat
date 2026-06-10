@@ -36,28 +36,45 @@ PAGE = r"""<!DOCTYPE html>
     </div>
     <div class="folder-list" id="folderList"></div>
     <div class="btn-new-folder" onclick="showFolderModal()">📁 ＋ 新建收藏夹</div>
-    <div class="sidebar-settings">
-        <div class="settings-row">
-            <select id="modelSelect" onchange="onSettingsChange()" style="flex:1">
-                <option value="deepseek-v4-pro">DS-V4 Pro</option>
-                <option value="deepseek-v4-flash">DS-V4 Flash</option>
-            </select>
-            <div class="think-row" onclick="toggleThink()" style="flex:1">
-                <input type="checkbox" id="thinkToggle" checked onchange="onSettingsChange()">
-                <span>🧠 深度思考</span>
-            </div>
+    <div class="sidebar-settings" id="settingsCard">
+        <div class="settings-toggle" onclick="toggleSettings()">
+            <span>⚙ 设置</span>
+            <span class="settings-arrow" id="settingsArrow">▾</span>
         </div>
-        <div class="settings-row">
-            <select id="effortSelect" onchange="onSettingsChange()" style="flex:1">
-                <option value="high">high</option>
-                <option value="max">max</option>
-            </select>
-            <select id="themeSelect" onchange="setTheme(this.value)" style="flex:1">
-                <option value="sunset">🌅 暖阳橙</option>
-                <option value="sakura">🌸 樱花粉</option>
-                <option value="ocean">🌊 深海蓝</option>
-                <option value="cosmic">🌑 宇宙黑</option>
-            </select>
+        <div class="settings-body" id="settingsBody">
+        <div class="settings-label">模型</div>
+        <div class="segmented-control" id="modelSeg">
+            <button class="seg-btn active" data-val="deepseek-v4-pro" onclick="pickModel(this)">V4 Pro</button>
+            <button class="seg-btn" data-val="deepseek-v4-flash" onclick="pickModel(this)">V4 Flash</button>
+        </div>
+        <div class="settings-divider"></div>
+        <label class="toggle-row">
+            <span class="toggle-label">🧠 深度思考</span>
+            <div class="ios-toggle">
+                <input type="checkbox" id="thinkToggle" checked onchange="onSettingsChange()">
+                <span class="ios-toggle-track"></span>
+            </div>
+        </label>
+        <div class="settings-divider"></div>
+        <div class="settings-label">思考力度</div>
+        <div class="segmented-control" id="effortSeg">
+            <button class="seg-btn active" data-val="high" onclick="pickEffort(this)">高</button>
+            <button class="seg-btn" data-val="max" onclick="pickEffort(this)">最大</button>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-label">主题</div>
+        <div class="theme-dots">
+            <button class="theme-dot active" onclick="setTheme('light')" style="background:linear-gradient(135deg,#e0e0e0,#999)" title="简约白"></button>
+            <button class="theme-dot" onclick="setTheme('sky')" style="background:linear-gradient(135deg,#4a90d9,#cde0f5)" title="天蓝"></button>
+            <button class="theme-dot" onclick="setTheme('leaf')" style="background:linear-gradient(135deg,#3d8b40,#d0e8d0)" title="青叶"></button>
+            <button class="theme-dot" onclick="setTheme('rose')" style="background:linear-gradient(135deg,#d4406a,#f8d0de)" title="玫瑰"></button>
+            <button class="theme-dot" onclick="setTheme('sunset')" style="background:linear-gradient(135deg,#e87830,#c870d0)" title="晚霞"></button>
+            <button class="theme-dot" onclick="setTheme('dark')" style="background:linear-gradient(135deg,#555,#1a1a1c)" title="简约黑"></button>
+            <button class="theme-dot" onclick="setTheme('ocean')" style="background:linear-gradient(135deg,#5ba0f0,#0a1628)" title="深海"></button>
+            <button class="theme-dot" onclick="setTheme('forest')" style="background:linear-gradient(135deg,#5cb860,#0a1a10)" title="深林"></button>
+            <button class="theme-dot" onclick="setTheme('bloom')" style="background:linear-gradient(135deg,#e07090,#1a0a14)" title="盛放"></button>
+            <button class="theme-dot" onclick="setTheme('cosmos')" style="background:linear-gradient(135deg,#6080d0,#c05050)" title="星穹"></button>
+        </div>
         </div>
     </div>
     <div class="sidebar-footer">{VERSION} · 数据保存至本地</div>
@@ -97,6 +114,7 @@ PAGE = r"""<!DOCTYPE html>
             <button class="btn-send" id="btnSend" onclick="send()" title="发送">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
             </button>
+            <button class="btn-stop" id="btnStop" onclick="stopGeneration()" title="停止生成" style="display:none">■</button>
         </div>
     </div>
 </div>
@@ -205,6 +223,18 @@ function escapeHtml(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
+function isNarrowContent(el) {
+    // 包含代码块、公式、表格、引用、列表、标题 → 宽气泡
+    if (el.querySelector('pre, .katex, .katex-display, table, blockquote, ul, ol, h1, h2, h3, h4, img')) return false;
+    // 去掉思考过程后检查文本长度
+    var clone = el.cloneNode(true);
+    var t = clone.querySelector('.reasoning-toggle'); if (t) t.remove();
+    var c = clone.querySelector('.reasoning-content'); if (c) c.remove();
+    var text = clone.textContent.replace(/\s+/g, '');  // 去除所有空白字符
+    if (text.length > 300) return false;
+    return true;
+}
+
 // ==================== 图标预设 ====================
 const PRESET_ICONS = ['📁','💼','🏠','🎓','💡','🚀','🎮','🎵','📚','❤️','🌟','🔥','🌈','🍕','🐱','💰','⚡','🎯','🌍','📝'];
 
@@ -249,13 +279,24 @@ async function init() {
         } catch(e) {}
     }
 
-    // 加载保存的主题
+    // 加载保存的主题（兼容旧名称）
     if (window.pywebview && pywebview.api) {
         try {
             const theme = await pywebview.api.getTheme();
-            if (theme) { document.body.dataset.theme = theme; document.getElementById('themeSelect').value = theme; }
+            const valid = ['light','dark','sky','ocean','leaf','forest','rose','bloom','sunset','cosmos'];
+            const name = valid.includes(theme) ? theme : 'light';
+            document.body.dataset.theme = name;
+            var dot = document.querySelector('.theme-dot[onclick*=\"' + name + '\"]');
+            if (dot) dot.classList.add('active');
         } catch(e) {}
     }
+
+    // 恢复设置栏折叠状态
+    try {
+        if (localStorage.getItem('settings-collapsed') === '1') {
+            document.getElementById('settingsCard').classList.add('collapsed');
+        }
+    } catch(e) {}
 
     try {
         if (window.pywebview && pywebview.api) {
@@ -471,11 +512,13 @@ function renderPinned() {
     section.style.display = 'block';
     list.innerHTML = pinned.map(c => {
         const folder = state.folders.find(f => f.id === c.folderId);
-        const folderName = folder ? (folder.icon + ' ' + folder.name) : '';
+        const folderTag = folder ? '<span class="pinned-folder-tag">' + escapeHtml(folder.icon + ' ' + folder.name) + '</span>' : '';
         return '<div class="pinned-item' + (c.id === state.currentId ? ' active' : '') + '" onclick="switchConv(\'' + c.id + '\')" oncontextmenu="onPinnedCtx(event,\'' + c.id + '\')">'
-            + '<span class="pin-icon">📌</span>' + escapeHtml(c.title || '新对话').slice(0, 20)
-            + '<span class="pinned-time">' + fmtRelative(c.updatedAt) + '</span>'
-            + (folderName ? '<span class="pinned-folder">' + escapeHtml(folderName) + '</span>' : '')
+            + '<span class="pin-icon">📌</span>'
+            + '<div class="pinned-body">'
+            + '<div class="pinned-title">' + escapeHtml(c.title || '新对话') + '</div>'
+            + '<div class="pinned-meta"><span>' + fmtRelative(c.updatedAt) + '</span>' + folderTag + '</div>'
+            + '</div>'
             + '</div>';
     }).join('');
 }
@@ -496,10 +539,18 @@ function renderMessages() {
             const rid = 'reasoning_' + i;
             r = '<div class="reasoning-toggle" onclick="var c=document.getElementById(\'' + rid + '\');var t=this;c.classList.toggle(\'open\');t.textContent=c.classList.contains(\'open\')?\'🧠 收起思考过程\':\'🧠 查看思考过程\';">🧠 查看思考过程</div><div class="reasoning-content" id="' + rid + '">' + escapeHtml(m.reasoning_content) + '</div>';
         }
-        return '<div class="msg ' + m.role + '" oncontextmenu="onMsgCtx(event,' + i + ')"><div class="msg-side"><div class="avatar">' + avatar + '</div><div class="msg-time">' + fmtTime(m.timestamp) + '</div></div><div class="bubble">' + r + html + '</div></div>';
+        return '<div class="msg ' + m.role + '" oncontextmenu="onMsgCtx(event,' + i + ')"><div class="msg-side"><div class="avatar">' + avatar + '</div><div class="msg-time">' + fmtTime(m.timestamp) + '</div></div><div class="bubble">' + r + html + '</div>'
+            + ((!isUser && i === conv.messages.length - 1 && !state.loading) ? '<div class="msg-actions"><button class="regenerate-btn" onclick="regenerate()" title="重新生成">🔄</button></div>' : '')
+            + '</div>';
     }).join('');
     container.scrollTop = container.scrollHeight;
     addCodeCopyButtons();
+    // 为纯文本短回答应用窄气泡样式
+    container.querySelectorAll('.msg.assistant .bubble').forEach(function(b) {
+        var msg = b.closest('.msg');
+        if (isNarrowContent(b)) { msg.classList.add('narrow'); }
+        else { msg.classList.remove('narrow'); }
+    });
 }
 
 // ==================== 代码块复制 ====================
@@ -523,6 +574,17 @@ function addCodeCopyButtons() {
     });
 }
 
+function setLoading(on) {
+    state.loading = on;
+    document.getElementById('btnSend').style.display = on ? 'none' : '';
+    document.getElementById('btnStop').style.display = on ? '' : 'none';
+    document.getElementById('btnSend').disabled = on;
+}
+
+async function stopGeneration() {
+    if (pywebview.api) pywebview.api.stopGeneration();
+}
+
 // ==================== 发送消息 ====================
 async function send() {
     if (state.loading) return;
@@ -542,11 +604,11 @@ async function send() {
     if (state.drawerOpen && conv.folderId !== state.drawerFolderId) conv.folderId = state.drawerFolderId;
     renderAll(); save();
     state.loading = true;
-    document.getElementById('btnSend').disabled = true;
+    setLoading(true);
     updateStatus();
-    const model = document.getElementById('modelSelect').value;
+    const model = getModel();
     const thinking = document.getElementById('thinkToggle').checked;
-    const effort = document.getElementById('effortSelect').value;
+    const effort = getEffort();
     pywebview.api.sendMessage(JSON.stringify({
         messages: conv.messages.filter(m => m.content !== '思考中...'),
         model: model, thinking: thinking, reasoning_effort: effort,
@@ -566,7 +628,7 @@ window._onStreamChunk = function(data) {
 
 window._onStreamDone = function(data) {
     state.loading = false;
-    document.getElementById('btnSend').disabled = false;
+    setLoading(false);
     updateStatus();
     const conv = getCurrent();
     if (!conv) return;
@@ -600,6 +662,28 @@ function fmtRelative(ts) {
     return String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
 }
 
+// ==================== 重新生成 ====================
+function regenerate() {
+    if (state.loading) return;
+    const conv = getCurrent();
+    if (!conv || conv.messages.length < 2) return;
+    const last = conv.messages[conv.messages.length - 1];
+    if (last.role !== 'assistant') return;
+    conv.messages.pop();
+    conv.messages.push({ role: 'assistant', content: '思考中...' });
+    renderAll(); save();
+    state.loading = true;
+    setLoading(true);
+    updateStatus();
+    const model = getModel();
+    const thinking = document.getElementById('thinkToggle').checked;
+    const effort = getEffort();
+    pywebview.api.sendMessage(JSON.stringify({
+        messages: conv.messages.filter(m => m.content !== '思考中...'),
+        model: model, thinking: thinking, reasoning_effort: effort,
+    }));
+}
+
 function updateLastMessage() {
     const container = document.getElementById('messages');
     const conv = getCurrent();
@@ -615,8 +699,19 @@ function updateLastMessage() {
         r = '<div class="reasoning-toggle" onclick="var c=document.getElementById(\'' + rid + '\');var t=this;c.classList.toggle(\'open\');t.textContent=c.classList.contains(\'open\')?\'🧠 收起思考过程\':\'🧠 查看思考过程\';">🧠 查看思考过程</div><div class="reasoning-content open" id="' + rid + '">' + escapeHtml(lastMsg.reasoning_content) + '</div>';
     }
     lastEl.innerHTML = r + html;
-    container.scrollTop = container.scrollHeight;
+    // 保持思考内容滚动在底部
+    var rc = lastEl.querySelector('.reasoning-content.open');
+    if (rc) rc.scrollTop = rc.scrollHeight;
+    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 80) {
+        container.scrollTop = container.scrollHeight;
+    }
     addCodeCopyButtons();
+    // 流式更新时动态切换窄/宽气泡
+    var msgEl = lastEl.closest('.msg');
+    if (msgEl) {
+        if (isNarrowContent(lastEl)) { msgEl.classList.add('narrow'); }
+        else { msgEl.classList.remove('narrow'); }
+    }
 }
 
 // ==================== 右键菜单 ====================
@@ -760,10 +855,29 @@ function onKeyDown(e) {
 }
 function autoResize() { const ta = document.getElementById('input'); ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px'; }
 function toggleThink() { const cb = document.getElementById('thinkToggle'); cb.checked = !cb.checked; onSettingsChange(); }
+function toggleSettings() {
+    var card = document.getElementById('settingsCard');
+    card.classList.toggle('collapsed');
+    var collapsed = card.classList.contains('collapsed');
+    try { localStorage.setItem('settings-collapsed', collapsed ? '1' : '0'); } catch(e) {}
+}
+function pickModel(btn) {
+    document.querySelectorAll('#modelSeg .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    onSettingsChange();
+}
+function pickEffort(btn) {
+    document.querySelectorAll('#effortSeg .seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    onSettingsChange();
+}
+function getModel() { return document.querySelector('#modelSeg .seg-btn.active').dataset.val; }
+function getEffort() { return document.querySelector('#effortSeg .seg-btn.active').dataset.val; }
 function onSettingsChange() { updateStatus(); }
 function updateStatus() {
-    const model = document.getElementById('modelSelect');
-    document.getElementById('statusText').textContent = model.options[model.selectedIndex].text + (document.getElementById('thinkToggle').checked ? ' · 🧠 深度思考' : '');
+    var activeBtn = document.querySelector('#modelSeg .seg-btn.active');
+    var modelName = activeBtn ? activeBtn.textContent : 'V4 Pro';
+    document.getElementById('statusText').textContent = modelName + (document.getElementById('thinkToggle').checked ? ' · 🧠' : '');
 }
 
 document.addEventListener('click', (e) => { if (!e.target.closest('.context-menu')) hideAllMenus(); });
@@ -799,9 +913,11 @@ document.addEventListener('mouseup', function() {
 
 // ==================== 主题切换 ====================
 function setTheme(name) {
-    document.body.dataset.theme = name || '';
-    document.getElementById('themeSelect').value = name || 'sunset';
-    if (pywebviewReady && pywebview.api) pywebview.api.setTheme(name || 'sunset');
+    document.body.dataset.theme = name || 'light';
+    document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+    var dot = document.querySelector('.theme-dot[onclick*=\"' + name + '\"]');
+    if (dot) dot.classList.add('active');
+    if (pywebviewReady && pywebview.api) pywebview.api.setTheme(name || 'light');
 }
 
 // ==================== 启动 ====================

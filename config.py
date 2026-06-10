@@ -63,59 +63,54 @@ def get_config_path() -> str:
 
 def load_sidebar_width() -> int:
     """加载保存的侧栏宽度"""
-    path = get_config_path()
-    try:
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                w = data.get("sidebar_width", SIDEBAR_WIDTH)
-                return max(180, min(500, int(w)))
-    except Exception:
-        pass
-    return SIDEBAR_WIDTH
+    w = _read_config().get("sidebar_width", SIDEBAR_WIDTH)
+    return max(180, min(500, int(w)))
 
 def save_sidebar_width(width: int):
     """保存侧栏宽度"""
-    path = get_config_path()
-    data = {}
-    try:
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-    except Exception:
-        pass
-    data["sidebar_width"] = int(width)
-    d = get_app_dir()
-    os.makedirs(d, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False)
+    _update_config("sidebar_width", int(width))
 
 def load_theme() -> str:
     """加载保存的主题名称，默认 sunset"""
-    path = get_config_path()
-    try:
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f).get("theme", "sunset")
-    except Exception:
-        pass
-    return "sunset"
+    return _read_config().get("theme", "light")
 
 def save_theme(theme: str):
     """保存主题名称"""
+    _update_config("theme", theme)
+
+def save_temperature(temp: float):
+    """保存温度设置"""
+    _update_config("temperature", float(temp))
+
+def save_top_p(val: float):
+    """保存 top_p 设置"""
+    _update_config("top_p", float(val))
+
+def _read_config() -> dict:
     path = get_config_path()
-    data = {}
     try:
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
+                return json.load(f)
     except Exception:
         pass
-    data["theme"] = theme
+    return {}
+
+def _update_config(key: str, value):
+    data = _read_config()
+    data[key] = value
     d = get_app_dir()
     os.makedirs(d, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    with open(get_config_path(), "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
+
+def load_window_geometry() -> dict:
+    """加载窗口几何信息"""
+    return _read_config().get("window_geometry", {})
+
+def save_window_geometry(x: int, y: int, w: int, h: int):
+    """保存窗口几何信息"""
+    _update_config("window_geometry", {"x": x, "y": y, "w": w, "h": h})
 
 def get_assets_dir() -> str:
     """资源目录：开发时用 assets/，打包后用 exe 旁边的 assets/"""
@@ -125,7 +120,7 @@ def get_assets_dir() -> str:
 
 # ==================== 窗口尺寸 ====================
 TITLE = "💬 DeepSeek Chat"
-APP_VERSION = "v2.4.3.1"
+APP_VERSION = "v3.0"
 
 WIN_WIDTH  = 1280
 WIN_HEIGHT = 840

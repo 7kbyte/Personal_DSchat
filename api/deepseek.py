@@ -122,8 +122,7 @@ def _build_body(messages: list, model: str, thinking: bool,
     body = {
         "model": model,
         "messages": messages,
-        "stream": stream,
-    }
+        "stream": stream,    }
     if not thinking:
         body["thinking"] = {"type": "disabled"}
     else:

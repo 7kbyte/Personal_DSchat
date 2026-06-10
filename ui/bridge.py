@@ -8,7 +8,7 @@ import threading
 import traceback
 import webview
 
-from config import load_api_key, save_api_key, load_sidebar_width, save_sidebar_width, load_theme, save_theme
+from config import load_api_key, save_api_key, load_sidebar_width, save_sidebar_width, load_theme, save_theme, save_window_geometry
 from api.deepseek import chat_stream, verify_api_key
 from storage.history import save as save_history, load as load_history
 
@@ -20,6 +20,7 @@ class Bridge:
         self.conversations, self.folders, self.current_id = load_history()
         self._lock = threading.Lock()
         self._loading = False
+        self._stop_flag = False
         load_api_key()
         print(f"[Bridge] loaded {len(self.conversations)} conversations, "
               f"{len(self.folders)} folders, "
@@ -56,6 +57,14 @@ class Bridge:
     def setTheme(self, theme: str):
         save_theme(theme)
 
+    def saveWindowSize(self, w: int, h: int):
+        try:
+            if webview.windows:
+                win = webview.windows[0]
+                save_window_geometry(win.x, win.y, int(w), int(h))
+        except Exception:
+            pass
+
     # ---- History ----
     def loadState(self) -> str:
         data = json.dumps({
@@ -83,6 +92,7 @@ class Bridge:
             if self._loading:
                 return
             self._loading = True
+            self._stop_flag = False
 
         try:
             data = json.loads(params_json)
@@ -93,15 +103,23 @@ class Bridge:
             return
         threading.Thread(target=self._do_send, args=(data,), daemon=True).start()
 
+    def stopGeneration(self):
+        with self._lock:
+            self._stop_flag = True
+        print("[Bridge] stop requested")
+
     def _do_send(self, data: dict):
         try:
             msgs = data["messages"]
             model = data["model"]
             thinking = data.get("thinking", True)
             effort = data.get("reasoning_effort", "high")
-            print(f"[Bridge] API call (stream): model={model}, thinking={thinking}, msgs={len(msgs)}")
+            print(f"[Bridge] API call: model={model}, thinking={thinking}, effort={effort}, msgs={len(msgs)}")
 
             for delta_content, delta_reasoning in chat_stream(msgs, model, thinking, effort):
+                with self._lock:
+                    if self._stop_flag:
+                        break
                 chunk = json.dumps({
                     "type": "chunk",
                     "content": delta_content,
