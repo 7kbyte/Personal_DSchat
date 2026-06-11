@@ -2,16 +2,21 @@
 function newConv() {
     const cur = getCurrent();
     if (cur && (!cur.messages || cur.messages.length === 0)) { document.getElementById('input').focus(); return; }
-    const id = Date.now().toString() + Math.random().toString(36).slice(2,8);
-    state.conversations.unshift({ id, title: '新对话', messages: [], pinned: false });
+    var id = Date.now().toString() + Math.random().toString(36).slice(2,8);
+    var conv = { id: id, title: '新对话', messages: [], pinned: false };
+    state.conversations.unshift(conv);
     state.currentId = id;
     renderAll(); save();
+    updateStatus();
+    if (typeof updatePromptCurrent === 'function') updatePromptCurrent();
 }
 
 function switchConv(id) {
     state.currentId = id;
     renderMessages(); renderPinned(); renderFolderList();
     if (state.drawerOpen) renderDrawerConvs();
+    updateStatus();
+    if (typeof updatePromptCurrent === 'function') updatePromptCurrent();
     save();
 }
 

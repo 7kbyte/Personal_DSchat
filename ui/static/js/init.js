@@ -63,6 +63,12 @@ async function init() {
         updateStatus();
     } catch(e) {}
 
+    // 加载提示词
+    try {
+        const promptsRaw = await pywebview.api.loadPrompts();
+        if (promptsRaw) state.prompts = JSON.parse(promptsRaw);
+    } catch(e) {}
+
     // API Key 检查
     try {
         const hasKey = await pywebview.api.hasApiKey();

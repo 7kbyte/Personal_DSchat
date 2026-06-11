@@ -70,6 +70,12 @@
             <button class="theme-dot" onclick="setTheme('bloom')" style="background:linear-gradient(135deg,#e07090,#1a0a14)" title="盛放"></button>
             <button class="theme-dot" onclick="setTheme('cosmos')" style="background:linear-gradient(135deg,#6080d0,#c05050)" title="星穹"></button>
         </div>
+        <div class="settings-divider"></div>
+        <div class="settings-label">提示词</div>
+        <div class="prompt-row">
+            <span class="prompt-current" id="promptCurrent" onclick="showPromptModal()">未设置</span>
+            <button class="prompt-btn" onclick="showPromptModal()">✏️</button>
+        </div>
         </div>
     </div>
     <div class="sidebar-footer">{VERSION} · 数据保存至本地</div>
@@ -94,7 +100,9 @@
 <div class="main">
     <div class="chat-header">
         <span class="dot"></span>
-        <span id="statusText">DS-V4 Pro · 🧠 深度思考</span>
+        <span id="statusModel"></span>
+        <span id="statusPrompt" class="status-prompt" onclick="viewCurrentPrompt()" title="点击查看提示词"></span>
+        <span id="statusMeta" class="status-meta"></span>
     </div>
     <div class="messages" id="messages">
         <div class="empty">
@@ -139,6 +147,7 @@
 <!-- ========== 文件夹编辑模态框 ========== -->
 <div class="modal-overlay" id="folderModal">
     <div class="modal">
+        <button class="modal-close" onclick="closeFolderModal()">✕</button>
         <h3 id="folderModalTitle">新建收藏夹</h3>
         <input type="text" id="folderNameInput" placeholder="收藏夹名称" maxlength="20">
         <p style="font-size:12px;color:var(--sub);margin-bottom:4px">选择图标：</p>
@@ -152,8 +161,9 @@
 </div>
 
 <!-- ========== 确认模态框 ========== -->
-<div class="modal-overlay" id="confirmModal">
+<div class="modal-overlay" id="confirmModal" style="z-index:1010">>
     <div class="modal" style="max-width:340px">
+        <button class="modal-close" onclick="closeConfirmModal()">✕</button>
         <h3 id="confirmTitle"></h3>
         <p id="confirmMsg" style="white-space:pre-line"></p>
         <div class="btns">
@@ -165,6 +175,7 @@
 
 <div class="modal-overlay" id="rollbackModal">
     <div class="modal">
+        <button class="modal-close" onclick="closeRollbackModal()">✕</button>
         <h3>回退对话</h3>
         <p id="rollbackHint"></p>
         <div class="btns">
@@ -176,6 +187,7 @@
 
 <div class="modal-overlay" id="apiKeyModal">
     <div class="modal">
+        <button class="modal-close" onclick="closeApiKeyModal()">✕</button>
         <h3>🔑 设置 API Key</h3>
         <p>请输入你的 DeepSeek API Key：</p>
         <input type="password" id="apiKeyInput" placeholder="sk-...">
@@ -188,6 +200,34 @@
     </div>
 </div>
 
+<!-- ========== 提示词管理模态框 ========== -->
+<div class="modal-overlay" id="promptModal">
+    <div class="modal" style="max-width:560px">
+        <button class="modal-close" onclick="closePromptModal()">✕</button>
+        <h3>💬 提示词管理</h3>
+        <div id="promptList" style="max-height:260px;overflow-y:auto;margin:8px 0"></div>
+        <button class="prompt-add-btn" onclick="addPrompt()" style="margin-bottom:8px">＋ 新建提示词</button>
+        <div id="promptEditor" style="display:none">
+            <input type="text" id="promptNameInput" placeholder="提示词名称，如：数学老师" maxlength="30" style="width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;outline:none">
+            <textarea id="promptContentInput" placeholder="输入提示词内容...&#10;&#10;例如：你是一位资深的数学教师，请用通俗易懂的方式解答问题。" rows="8" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);resize:vertical;font-family:inherit;font-size:13px;line-height:1.7;outline:none;min-height:160px"></textarea>
+            <div class="btns" style="margin-top:10px">
+                <button onclick="cancelEditPrompt()">取消</button>
+                <button style="background:var(--accent);color:var(--on-accent);border-color:var(--accent)" onclick="savePrompt()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 查看提示词模态框 ========== -->
+<div class="modal-overlay" id="viewPromptModal">
+    <div class="modal" style="max-width:520px">
+        <button class="modal-close" onclick="closeViewPrompt()">✕</button>
+        <h3>💬 当前提示词</h3>
+        <pre id="viewPromptContent" style="background:var(--surface-secondary);padding:16px;border-radius:10px;white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.7;max-height:400px;overflow-y:auto;color:var(--text);user-select:text;margin:8px 0"></pre>
+    </div>
+        </div>
+    </div>
+</div>
 
 <script>
 {{JS}}

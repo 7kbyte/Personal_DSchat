@@ -1,4 +1,19 @@
 // ==================== 发送消息 ====================
+function ensureSystemPrompt(conv) {
+    // 如果对话有提示词但历史中没有 system 消息，则插入并冻结名称
+    if (!conv || !conv.promptId) return;
+    if (conv.messages.length > 0 && conv.messages[0].role === 'system') return;
+    var p = state.prompts.find(function(x) { return x.id === conv.promptId; });
+    if (!p || !p.content) return;
+    conv.messages.unshift({ role: 'system', content: p.content });
+    conv.promptName = p.name;  // 冻结名称，后续不受设置变更影响
+}
+
+function buildApiMessages(conv) {
+    ensureSystemPrompt(conv);
+    return conv.messages.filter(function(m) { return m.content !== '思考中...'; });
+}
+
 async function send() {
     if (state.loading) return;
     const input = document.getElementById('input');
@@ -8,7 +23,7 @@ async function send() {
     const conv = getCurrent();
     if (!conv) return;
     conv.messages.push({ role: 'user', content: text, timestamp: Date.now() });
-    if (conv.messages.length === 1) {
+    if (conv.messages.length === 1 || (conv.messages.length === 2 && conv.messages[0].role === 'system')) {
         conv.title = text.slice(0, 30) + (text.length > 30 ? '...' : '');
         if (!conv.folderId) conv.folderId = state.drawerOpen ? state.drawerFolderId : 'f_default';
     }
@@ -22,8 +37,9 @@ async function send() {
     const model = getModel();
     const thinking = document.getElementById('thinkToggle').checked;
     const effort = getEffort();
+    var msgs = buildApiMessages(conv);
     pywebview.api.sendMessage(JSON.stringify({
-        messages: conv.messages.filter(m => m.content !== '思考中...'),
+        messages: msgs,
         model: model, thinking: thinking, reasoning_effort: effort,
     }));
 }
@@ -71,8 +87,9 @@ function regenerate() {
     const model = getModel();
     const thinking = document.getElementById('thinkToggle').checked;
     const effort = getEffort();
+    var msgs = buildApiMessages(conv);
     pywebview.api.sendMessage(JSON.stringify({
-        messages: conv.messages.filter(m => m.content !== '思考中...'),
+        messages: msgs,
         model: model, thinking: thinking, reasoning_effort: effort,
     }));
 }

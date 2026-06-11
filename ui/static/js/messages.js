@@ -34,7 +34,12 @@ function renderMessages() {
         container.innerHTML = '<div class="empty"><div class="logo">🐱</div><h2>你好！我是 DeepSeek</h2><p>有什么可以帮你的吗？</p></div>';
         return;
     }
-    container.innerHTML = conv.messages.map((m, i) => {
+    var visible = conv.messages.filter(function(m) { return m.role !== 'system'; });
+    if (visible.length === 0) {
+        container.innerHTML = '<div class="empty"><div class="logo">🐱</div><h2>你好！我是 DeepSeek</h2><p>有什么可以帮你的吗？</p></div>';
+        return;
+    }
+    container.innerHTML = visible.map((m, i) => {
         const isUser = m.role === 'user';
         const avatar = isUser ? '我' : 'DS';
         const html = renderMarkdown(m.content);

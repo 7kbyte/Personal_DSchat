@@ -8,7 +8,7 @@ import threading
 import traceback
 import webview
 
-from config import load_api_key, save_api_key, load_sidebar_width, save_sidebar_width, load_theme, save_theme, load_setting, save_setting, save_settings, save_window_geometry
+from config import load_api_key, save_api_key, load_sidebar_width, save_sidebar_width, load_theme, save_theme, load_setting, save_setting, save_settings, save_window_geometry, load_prompts, save_prompts
 from api.deepseek import chat_stream, verify_api_key
 from storage.history import save as save_history, load as load_history
 
@@ -70,6 +70,19 @@ class Bridge:
         try:
             data = json.loads(settings_json)
             save_settings(data)
+        except Exception:
+            pass
+
+    # ---- 提示词 ----
+    def loadPrompts(self) -> str:
+        import json
+        return json.dumps(load_prompts(), ensure_ascii=False)
+
+    def savePrompts(self, prompts_json: str):
+        import json
+        try:
+            data = json.loads(prompts_json)
+            save_prompts(data)
         except Exception:
             pass
 

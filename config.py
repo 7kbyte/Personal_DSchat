@@ -29,6 +29,35 @@ def get_history_path() -> str:
     os.makedirs(d, exist_ok=True)
     return os.path.join(d, "chat_history.json")
 
+def get_prompts_path() -> str:
+    return os.path.join(get_app_dir(), "prompts.json")
+
+def load_prompts() -> list:
+    path = get_prompts_path()
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                import json
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+    except Exception:
+        pass
+    return []
+
+def save_prompts(prompts: list):
+    d = get_app_dir()
+    os.makedirs(d, exist_ok=True)
+    path = get_prompts_path()
+    tmp = path + ".tmp"
+    try:
+        import json
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(prompts, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except Exception:
+        pass
+
 def get_key_path() -> str:
     return os.path.join(get_app_dir(), "apikey.txt")
 
@@ -169,7 +198,7 @@ def get_assets_dir() -> str:
 
 # ==================== 窗口尺寸 ====================
 TITLE = "💬 DeepSeek Chat"
-APP_VERSION = "v3.1"
+APP_VERSION = "v3.2"
 
 WIN_WIDTH  = 1280
 WIN_HEIGHT = 840

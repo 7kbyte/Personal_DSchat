@@ -22,6 +22,7 @@ _JS_MODULES = [
     'drag.js',          # 拖拽排序
     'modals.js',        # 模态框
     'settings.js',      # 设置 / 辅助
+    'prompts.js',       # 提示词管理
     'init.js',          # 初始化
     'main.js',          # 启动入口
 ]

@@ -43,7 +43,43 @@ function onSettingsChange() { updateStatus(); }
 function updateStatus() {
     var activeBtn = document.querySelector('#modelSeg .seg-btn.active');
     var modelName = activeBtn ? activeBtn.textContent : 'V4 Pro';
-    document.getElementById('statusText').textContent = modelName + (document.getElementById('thinkToggle').checked ? ' \u00b7 \u{1F9E0}' : '');
+    var thinking = document.getElementById('thinkToggle').checked;
+    document.getElementById('statusModel').textContent = modelName + (thinking ? ' · 🧠' : '');
+    
+    var conv = getCurrent();
+    var promptEl = document.getElementById('statusPrompt');
+    if (conv && conv.promptName) {
+        promptEl.textContent = '💬 ' + conv.promptName;
+        promptEl.style.display = '';
+    } else {
+        promptEl.textContent = '';
+        promptEl.style.display = 'none';
+    }
+    
+    var metaEl = document.getElementById('statusMeta');
+    if (conv && conv.updatedAt) {
+        metaEl.textContent = fmtDate(conv.updatedAt);
+    } else {
+        metaEl.textContent = '';
+    }
+}
+
+function viewCurrentPrompt() {
+    var conv = getCurrent();
+    if (!conv || conv.messages.length === 0 || conv.messages[0].role !== 'system') return;
+    var content = conv.messages[0].content;
+    document.getElementById('viewPromptContent').textContent = content;
+    document.getElementById('viewPromptModal').style.display = 'flex';
+}
+function closeViewPrompt() {
+    document.getElementById('viewPromptModal').style.display = 'none';
+}
+
+function fmtDate(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    return (d.getMonth()+1) + '/' + d.getDate() + ' ' + 
+           String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
 
 document.addEventListener('click', (e) => { if (!e.target.closest('.context-menu')) hideAllMenus(); });
