@@ -30,6 +30,8 @@ def run():
         x=geo.get("x", None),
         y=geo.get("y", None),
         min_size=(WIN_MIN_W, WIN_MIN_H),
+        frameless=True,
+        easy_drag=False,
     )
 
     def on_closing():

@@ -12,12 +12,18 @@ function newConv() {
 }
 
 function switchConv(id) {
-    state.currentId = id;
-    renderMessages(); renderPinned(); renderFolderList();
-    if (state.drawerOpen) renderDrawerConvs();
-    updateStatus();
-    if (typeof updatePromptCurrent === 'function') updatePromptCurrent();
-    save();
+    var container = document.getElementById('messages');
+    container.style.opacity = '0';
+    requestAnimationFrame(function() {
+        state.currentId = id;
+        renderMessages(); renderPinned(); renderFolderList();
+        if (state.drawerOpen) renderDrawerConvs();
+        updateStatus();
+        if (typeof updatePromptCurrent === 'function') updatePromptCurrent();
+        save();
+        container.offsetHeight;
+        container.style.opacity = '1';
+    });
 }
 
 function getCurrent() { return state.conversations.find(c => c.id === state.currentId); }

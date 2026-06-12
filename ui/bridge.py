@@ -94,6 +94,89 @@ class Bridge:
         except Exception:
             pass
 
+    # ---- 窗口控制 ----
+    def minimizeWindow(self):
+        try:
+            if webview.windows:
+                webview.windows[0].minimize()
+        except Exception:
+            pass
+
+    def maximizeWindow(self):
+        """最大化——任务栏感知：使用 SPI_GETWORKAREA + DPI 转换"""
+        try:
+            if not webview.windows:
+                return
+            import ctypes
+            win = webview.windows[0]
+            hwnd = ctypes.windll.user32.FindWindowW(None, "DeepSeek Chat")
+            if not hwnd:
+                return
+            # 计算 DPI 缩放比：物理像素 / pywebview 逻辑像素
+            r = (ctypes.c_long * 4)()
+            ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(r))
+            scale = (r[2] - r[0]) / max(win.width, 1)
+            # 获取工作区（排除任务栏），转为 pywebview 逻辑坐标
+            wa = (ctypes.c_long * 4)()
+            ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(wa), 0)
+            nx = int(wa[0] / scale)
+            ny = int(wa[1] / scale)
+            nw = int((wa[2] - wa[0]) / scale)
+            nh = int((wa[3] - wa[1]) / scale)
+            self._restore_geo = (win.x, win.y, win.width, win.height)
+            win.move(nx, ny)
+            win.resize(nw, nh)
+        except Exception:
+            pass
+
+    def restoreWindow(self):
+        try:
+            if webview.windows and hasattr(self, '_restore_geo') and self._restore_geo:
+                x, y, w, h = self._restore_geo
+                webview.windows[0].move(x, y)
+                webview.windows[0].resize(w, h)
+                self._restore_geo = None
+        except Exception:
+            pass
+
+    def getWindowRect(self) -> str:
+        """获取窗口位置尺寸——使用 pywebview 内部坐标（已处理 DPI 缩放）"""
+        import json
+        try:
+            if webview.windows:
+                win = webview.windows[0]
+                return json.dumps({"x": win.x, "y": win.y, "w": win.width, "h": win.height})
+        except Exception:
+            pass
+        return '{"x":0,"y":0,"w":800,"h":600}'
+
+    def moveWindow(self, x: int, y: int):
+        """移动窗口——使用 pywebview 内部坐标"""
+        try:
+            if webview.windows:
+                webview.windows[0].move(int(x), int(y))
+        except Exception:
+            pass
+
+    def closeWindow(self):
+        try:
+            if webview.windows:
+                webview.windows[0].destroy()
+        except Exception:
+            pass
+
+    def resizeWindow(self, x: int, y: int, w: int, h: int):
+        """缩放窗口——使用 pywebview 内部坐标"""
+        try:
+            if webview.windows:
+                win = webview.windows[0]
+                win.move(int(x), int(y))
+                win.resize(int(w), int(h))
+        except Exception:
+            pass
+        except Exception:
+            pass
+
     # ---- History ----
     def loadState(self) -> str:
         data = json.dumps({

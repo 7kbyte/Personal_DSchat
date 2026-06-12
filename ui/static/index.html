@@ -19,6 +19,29 @@
 </head>
 <body>
 
+<!-- ========== 窗口缩放拖拽手柄 ========== -->
+<div class="resize-handles" aria-hidden="true">
+  <div class="rh rh-top" onmousedown="onResizeStart('top',event)"></div>
+  <div class="rh rh-bottom" onmousedown="onResizeStart('bottom',event)"></div>
+  <div class="rh rh-left" onmousedown="onResizeStart('left',event)"></div>
+  <div class="rh rh-right" onmousedown="onResizeStart('right',event)"></div>
+  <div class="rh rh-tl" onmousedown="onResizeStart('tl',event)"></div>
+  <div class="rh rh-tr" onmousedown="onResizeStart('tr',event)"></div>
+  <div class="rh rh-bl" onmousedown="onResizeStart('bl',event)"></div>
+  <div class="rh rh-br" onmousedown="onResizeStart('br',event)"></div>
+</div>
+
+<!-- ========== 背景几何装饰 ========== -->
+<div class="bg-decor" aria-hidden="true">
+  <svg class="deco deco-circle-lg" viewBox="0 0 160 160"><circle cx="80" cy="80" r="76" fill="none" stroke="currentColor" stroke-width="21"/></svg>
+  <svg class="deco deco-square-md" viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" fill="none" stroke="currentColor" stroke-width="18" rx="0.5"/></svg>
+  <svg class="deco deco-triangle-md" viewBox="0 0 130 120"><polygon points="65,10 120,110 10,110" fill="none" stroke="currentColor" stroke-width="18" stroke-linejoin="miter"/></svg>
+  <svg class="deco deco-circle-sm" viewBox="0 0 80 80"><circle cx="40" cy="40" r="37" fill="none" stroke="currentColor" stroke-width="14"/></svg>
+  <svg class="deco deco-square-sm" viewBox="0 0 70 70"><rect x="4" y="4" width="62" height="62" fill="none" stroke="currentColor" stroke-width="14" rx="0.5"/></svg>
+  <svg class="deco deco-triangle-sm" viewBox="0 0 90 80"><polygon points="45,6 80,74 10,74" fill="none" stroke="currentColor" stroke-width="14" stroke-linejoin="miter"/></svg>
+  <svg class="deco deco-circle-bl" viewBox="0 0 200 200"><circle cx="100" cy="100" r="95" fill="none" stroke="currentColor" stroke-width="21"/></svg>
+</div>
+
 <!-- ========== 侧边栏 ========== -->
 <div class="sidebar">
     <div class="sidebar-header">
@@ -103,6 +126,11 @@
         <span id="statusModel"></span>
         <span id="statusPrompt" class="status-prompt" onclick="viewCurrentPrompt()" title="点击查看提示词"></span>
         <span id="statusMeta" class="status-meta"></span>
+        <div class="win-controls">
+            <button class="win-btn win-min" onclick="pywebview.api.minimizeWindow()" title="最小化">─</button>
+            <button class="win-btn win-max" id="btnMaximize" onclick="onMaximizeToggle()" title="最大化">□</button>
+            <button class="win-btn win-close" onclick="pywebview.api.closeWindow()" title="关闭">✕</button>
+        </div>
     </div>
     <div class="messages" id="messages">
         <div class="empty">
@@ -208,8 +236,8 @@
         <div id="promptList" style="max-height:260px;overflow-y:auto;margin:8px 0"></div>
         <button class="prompt-add-btn" onclick="addPrompt()" style="margin-bottom:8px">＋ 新建提示词</button>
         <div id="promptEditor" style="display:none">
-            <input type="text" id="promptNameInput" placeholder="提示词名称，如：数学老师" maxlength="30" style="width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;outline:none">
-            <textarea id="promptContentInput" placeholder="输入提示词内容...&#10;&#10;例如：你是一位资深的数学教师，请用通俗易懂的方式解答问题。" rows="8" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);resize:vertical;font-family:inherit;font-size:13px;line-height:1.7;outline:none;min-height:160px"></textarea>
+            <input type="text" id="promptNameInput" placeholder="提示词名称" maxlength="30" style="width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;outline:none">
+            <textarea id="promptContentInput" placeholder="输入提示词内容..." rows="8" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);resize:vertical;font-family:inherit;font-size:13px;line-height:1.7;outline:none;min-height:160px"></textarea>
             <div class="btns" style="margin-top:10px">
                 <button onclick="cancelEditPrompt()">取消</button>
                 <button style="background:var(--accent);color:var(--on-accent);border-color:var(--accent)" onclick="savePrompt()">保存</button>
