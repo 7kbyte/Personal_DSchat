@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek Chat</title>
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+<!-- marked.js -->
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+
+<!-- Alpine.js -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+
+<style>
+{{CSS}}
+</style>
+</head>
+<body x-data @click="$store.app.hideAllMenus()" @keydown.escape="$store.app.closeDrawer(); $store.app.hideAllMenus()">
+
+<!-- ========== 窗口缩放拖拽手柄 ========== -->
+<div class="resize-handles" aria-hidden="true">
+  <div class="rh rh-top" onmousedown="onResizeStart('top',event)"></div>
+  <div class="rh rh-bottom" onmousedown="onResizeStart('bottom',event)"></div>
+  <div class="rh rh-left" onmousedown="onResizeStart('left',event)"></div>
+  <div class="rh rh-right" onmousedown="onResizeStart('right',event)"></div>
+  <div class="rh rh-tl" onmousedown="onResizeStart('tl',event)"></div>
+  <div class="rh rh-tr" onmousedown="onResizeStart('tr',event)"></div>
+  <div class="rh rh-bl" onmousedown="onResizeStart('bl',event)"></div>
+  <div class="rh rh-br" onmousedown="onResizeStart('br',event)"></div>
+</div>
+
+<!-- ========== 背景几何装饰 ========== -->
+<div class="bg-decor" aria-hidden="true">
+  <svg class="deco deco-circle-lg" viewBox="0 0 160 160"><circle cx="80" cy="80" r="76" fill="none" stroke="currentColor" stroke-width="21"/></svg>
+  <svg class="deco deco-square-md" viewBox="0 0 100 100"><rect x="5" y="5" width="90" height="90" fill="none" stroke="currentColor" stroke-width="18" rx="0.5"/></svg>
+  <svg class="deco deco-triangle-md" viewBox="0 0 130 120"><polygon points="65,10 120,110 10,110" fill="none" stroke="currentColor" stroke-width="18" stroke-linejoin="miter"/></svg>
+  <svg class="deco deco-circle-sm" viewBox="0 0 80 80"><circle cx="40" cy="40" r="37" fill="none" stroke="currentColor" stroke-width="14"/></svg>
+  <svg class="deco deco-square-sm" viewBox="0 0 70 70"><rect x="4" y="4" width="62" height="62" fill="none" stroke="currentColor" stroke-width="14" rx="0.5"/></svg>
+  <svg class="deco deco-triangle-sm" viewBox="0 0 90 80"><polygon points="45,6 80,74 10,74" fill="none" stroke="currentColor" stroke-width="14" stroke-linejoin="miter"/></svg>
+  <svg class="deco deco-circle-bl" viewBox="0 0 200 200"><circle cx="100" cy="100" r="95" fill="none" stroke="currentColor" stroke-width="21"/></svg>
+</div>
+
+<!-- ========== 侧边栏 ========== -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h1>💬 DeepSeek Chat</h1>
+        <p>Powered by DeepSeek API</p>
+    </div>
+    <button class="btn-new" @click="$store.app.newConv()">＋ 新对话</button>
+
+    <!-- 置顶区域 -->
+    <div class="pinned-section" x-show="$store.app.pinnedConversations.length > 0">
+        <div class="pinned-list">
+            <template x-for="c in $store.app.pinnedConversations" :key="c.id">
+                <div class="pinned-item" :class="{ active: c.id === $store.app.currentId }" draggable="true"
+                    :data-conv-id="c.id"
+                    @click="$store.app.switchConv(c.id)"
+                    @contextmenu.prevent="$store.app.ctxConvId = c.id; $refs.pinnedCtxMenu.style.display='block'; $refs.pinnedCtxMenu.style.left=event.clientX+'px'; $refs.pinnedCtxMenu.style.top=event.clientY+'px'"
+                    @dragstart="onPinnedDragStart($event, c.id)"
+                    @dragend="onPinnedDragEnd($event)"
+                    @dragover="onPinnedDragOver($event)"
+                    @dragleave="onPinnedDragLeave($event)"
+                    @drop="onPinnedDrop($event, c.id)">
+                    <span class="pin-icon">📌</span>
+                    <div class="pinned-body">
+                        <div class="pinned-title" x-text="c.title || '新对话'"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- 收藏夹列表 -->
+    <div class="folder-list">
+        <template x-for="f in $store.app.folders" :key="f.id">
+            <div class="folder-item" :class="{ active: f.id === $store.app.drawerFolderId && $store.app.drawerOpen }"
+                draggable="true" :data-folder-id="f.id"
+                @click="$store.app.openDrawer(f.id)"
+                @contextmenu.prevent="$store.app.ctxFolderId = f.id; $refs.folderCtxMenu.style.display='block'; $refs.folderCtxMenu.style.left=event.clientX+'px'; $refs.folderCtxMenu.style.top=event.clientY+'px'"
+                @dragstart="onFolderDragStart($event, f.id)"
+                @dragend="onFolderDragEnd($event)"
+                @dragover="onFolderDragOver($event)"
+                @dragleave="onFolderDragLeave($event)"
+                @drop="onFolderDrop($event, f.id)">
+                <span class="folder-icon" x-text="f.icon"></span>
+                <span class="folder-name" x-text="$store.app.folderDisplayName(f)"></span>
+                <span class="folder-count" x-text="$store.app.conversations.filter(c=>c.folderId===f.id).length"></span>
+            </div>
+        </template>
+    </div>
+
+    <div class="btn-new-folder" @click="$store.app.openFolderModal()">📁 ＋ 新建收藏夹</div>
+
+    <!-- 设置面板 -->
+    <div class="sidebar-settings" :class="{ collapsed: $store.app.settingsCollapsed }">
+        <div class="settings-toggle" @click="$store.app.toggleSettingsPanel()">
+            <span>⚙ 设置</span>
+            <span class="settings-arrow">▾</span>
+        </div>
+        <div class="settings-body">
+        <div class="settings-label">模型</div>
+        <div class="segmented-control">
+            <button class="seg-btn" :class="{ active: $store.app.model === 'deepseek-v4-pro' }" @click="$store.app.pickModel('deepseek-v4-pro')">V4 Pro</button>
+            <button class="seg-btn" :class="{ active: $store.app.model === 'deepseek-v4-flash' }" @click="$store.app.pickModel('deepseek-v4-flash')">V4 Flash</button>
+        </div>
+        <div class="settings-divider"></div>
+        <label class="toggle-row">
+            <span class="toggle-label">🧠 深度思考</span>
+            <div class="ios-toggle">
+                <input type="checkbox" :checked="$store.app.thinking" @change="$store.app.thinking = $event.target.checked; $store.app._saveSettings()">
+                <span class="ios-toggle-track"></span>
+            </div>
+        </label>
+        <div class="settings-divider"></div>
+        <div class="settings-label">思考力度</div>
+        <div class="segmented-control">
+            <button class="seg-btn" :class="{ active: $store.app.effort === 'high' }" @click="$store.app.pickEffort('high')">高</button>
+            <button class="seg-btn" :class="{ active: $store.app.effort === 'max' }" @click="$store.app.pickEffort('max')">最大</button>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-label">主题</div>
+        <div class="theme-dots">
+            <template x-for="t in [
+                {id:'light',style:'linear-gradient(135deg,#e0e0e0,#999)',title:'简约白'},
+                {id:'sky',style:'linear-gradient(135deg,#4a90d9,#cde0f5)',title:'天蓝'},
+                {id:'leaf',style:'linear-gradient(135deg,#3d8b40,#d0e8d0)',title:'青叶'},
+                {id:'rose',style:'linear-gradient(135deg,#d4406a,#f8d0de)',title:'玫瑰'},
+                {id:'sunset',style:'linear-gradient(135deg,#e87830,#c870d0)',title:'晚霞'},
+                {id:'dark',style:'linear-gradient(135deg,#555,#1a1a1c)',title:'简约黑'},
+                {id:'ocean',style:'linear-gradient(135deg,#5ba0f0,#0a1628)',title:'深海'},
+                {id:'forest',style:'linear-gradient(135deg,#5cb860,#0a1a10)',title:'深林'},
+                {id:'bloom',style:'linear-gradient(135deg,#e07090,#1a0a14)',title:'盛放'},
+                {id:'cosmos',style:'linear-gradient(135deg,#6080d0,#c05050)',title:'星穹'}
+            ]" :key="t.id">
+                <button class="theme-dot" :class="{ active: $store.app.theme === t.id }"
+                    :style="'background:'+t.style" :title="t.title"
+                    @click="$store.app.setTheme(t.id)"></button>
+            </template>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="settings-label">提示词</div>
+        <div class="prompt-row">
+            <span class="prompt-current" @click="$store.app.openPromptModal()" x-text="$store.app.defaultPromptName || '未设置'"></span>
+            <button class="prompt-btn" @click="$store.app.openPromptModal()">✏️</button>
+        </div>
+        </div>
+    </div>
+    <div class="sidebar-footer">{VERSION} · 数据保存至本地</div>
+    <div class="sidebar-resize-handle" id="resizeHandle"></div>
+</div>
+
+<!-- ========== 抽屉面板 ========== -->
+<div class="drawer-overlay" x-show="$store.app.drawerOpen" @click="$store.app.closeDrawer()"></div>
+<div class="drawer-panel" :class="{ open: $store.app.drawerOpen }"
+    x-show="$store.app.drawerOpen">
+    <div class="drawer-header">
+        <span class="folder-title" x-text="$store.app.currentFolder?.displayName || ''"></span>
+        <button class="drawer-btn-close" @click="$store.app.closeDrawer()" title="关闭">✕</button>
+    </div>
+    <div class="drawer-search">
+        <input type="text" placeholder="🔍 过滤对话..." x-model="$store.app.drawerSearch">
+    </div>
+    <div class="drawer-conv-list">
+        <template x-for="c in $store.app.drawerConversations" :key="c.id">
+            <div class="drawer-conv-item" :class="{ active: c.id === $store.app.currentId }"
+                draggable="true" :data-conv-id="c.id"
+                @click="$store.app.switchConv(c.id)"
+                @contextmenu.prevent="$store.app.ctxConvId = c.id; $refs.drawerCtxMenu.style.display='block'; $refs.drawerCtxMenu.style.left=event.clientX+'px'; $refs.drawerCtxMenu.style.top=event.clientY+'px'"
+                @dragstart="onDrawerConvDragStart($event, c.id)"
+                @dragend="onDrawerConvDragEnd($event)"
+                @dragover="onDrawerConvDragOver($event)"
+                @dragleave="onDrawerConvDragLeave($event)"
+                @drop="onDrawerConvDrop($event, c.id)">
+                <span class="pin-icon" x-show="c.pinned">📌</span>
+                <span class="conv-name" x-text="c.title || '新对话'"></span>
+                <span class="conv-time" x-text="$store.app.fmtRelative(c.updatedAt)"></span>
+            </div>
+        </template>
+        <div class="drawer-empty" x-show="$store.app.drawerConversations.length === 0">
+            没有对话
+        </div>
+    </div>
+    <div class="drawer-resize-handle" id="drawerResizeHandle"></div>
+</div>
+
+<!-- ========== 主区域 ========== -->
+<div class="main">
+    <div class="chat-header">
+        <span class="dot"></span>
+        <span x-text="$store.app.statusText"></span>
+        <span class="status-prompt" @click="$store.app.viewCurrentPrompt()" title="点击查看提示词"
+            x-text="$store.app.currentPromptName" x-show="$store.app.currentPromptName !== '未设置'"></span>
+        <span class="status-meta" x-text="$store.app.fmtRelative($store.app.current?.updatedAt)"></span>
+        <div class="win-controls">
+            <button class="win-btn win-min" @click="pywebview.api.minimizeWindow()" title="最小化">─</button>
+            <button class="win-btn win-max" id="btnMaximize" @click="onMaximizeToggle()" title="最大化">□</button>
+            <button class="win-btn win-close" @click="pywebview.api.closeWindow()" title="关闭">✕</button>
+        </div>
+    </div>
+
+    <div class="messages" id="messages">
+        <!-- 空状态 -->
+        <div class="empty" x-show="!$store.app.hasMessages">
+            <div class="logo">🐱</div>
+            <h2>你好！我是 DeepSeek</h2>
+            <p>有什么可以帮你的吗？</p>
+        </div>
+        <!-- 消息列表 - 由 stream.js 的 renderMessages 处理，保持兼容 -->
+        <div id="messagesContent"></div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-row">
+            <textarea id="input" rows="1" placeholder="输入消息，Enter 发送，Shift+Enter 换行"
+                @keydown="onKeyDown($event)" @input="autoResize($event)"></textarea>
+            <button class="btn-send" id="btnSend" @click="send()" title="发送"
+                :style="{ display: $store.app.loading ? 'none' : '' }">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+            </button>
+            <button class="btn-stop" id="btnStop" @click="stopGeneration()" title="停止生成"
+                :style="{ display: $store.app.loading ? '' : 'none' }">■</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========== 右键菜单 ========== -->
+<div class="context-menu" id="msgCtxMenu" x-ref="msgCtxMenu" @click.outside="$store.app.hideAllMenus()">
+    <div class="item" @click="$store.app.copyMessageText($store.app.ctxMsgIdx); $store.app.hideAllMenus()">📋 复制此消息</div>
+    <div class="item" @click="$store.app.copyAllText(); $store.app.hideAllMenus()">📋 复制全部对话</div>
+    <div style="height:1px;background:var(--border);margin:2px 8px"></div>
+    <div class="item" id="rollbackItem" @click="$store.app.rollbackTo($store.app.ctxMsgIdx); $store.app.hideAllMenus()">↩ 回退到此处</div>
+</div>
+
+<div class="context-menu" id="folderCtxMenu" x-ref="folderCtxMenu" @click.outside="$store.app.hideAllMenus()">
+    <div class="item" @click="$store.app.openFolderModal($store.app.ctxFolderId); $store.app.hideAllMenus()">✏️ 重命名</div>
+    <div class="item danger" @click="$store.app.deleteFolder(); $store.app.hideAllMenus()">🗑 删除收藏夹</div>
+</div>
+
+<div class="context-menu" id="pinnedCtxMenu" x-ref="pinnedCtxMenu" @click.outside="$store.app.hideAllMenus()">
+    <div class="item" @click="$store.app.togglePin(); $store.app.hideAllMenus()">📌 取消置顶</div>
+    <div class="item danger" @click="$store.app.deleteConversation($store.app.ctxConvId); $store.app.hideAllMenus()">🗑 删除对话</div>
+</div>
+
+<div class="context-menu" id="drawerCtxMenu" x-ref="drawerCtxMenu" @click.outside="$store.app.hideAllMenus()">
+    <div class="item" @click="$store.app.togglePin(); $store.app.hideAllMenus()">📌 置顶/取消置顶</div>
+    <div class="item" @click="$store.app.moveConvToFolder($store.app.ctxConvId, $store.app.drawerFolderId === 'f_default' ? '' : 'f_default'); $store.app.hideAllMenus()">📁 移至默认</div>
+    <div class="item danger" @click="$store.app.deleteConversation($store.app.ctxConvId); $store.app.hideAllMenus()">🗑 删除对话</div>
+</div>
+
+<!-- ========== 模态框 ========== -->
+
+<!-- 文件夹编辑 -->
+<div class="modal-overlay" x-show="$store.app.showFolderModal" @click.self="$store.app.closeFolderModal()">
+    <div class="modal">
+        <button class="modal-close" @click="$store.app.closeFolderModal()">✕</button>
+        <h3 x-text="$store.app.folderModalEditId ? '重命名收藏夹' : '新建收藏夹'"></h3>
+        <input type="text" placeholder="收藏夹名称" maxlength="20" x-model="$store.app.folderModalName">
+        <p style="font-size:12px;color:var(--sub);margin-bottom:4px">选择图标：</p>
+        <div class="icon-picker">
+            <template x-for="icon in $store.app.presetIcons" :key="icon">
+                <span :class="{ sel: $store.app.folderModalIcon === icon }"
+                    @click="$store.app.folderModalIcon = icon" x-text="icon"></span>
+            </template>
+        </div>
+        <p style="font-size:12px;color:var(--danger)" x-show="$store.app.folderModalError" x-text="$store.app.folderModalError"></p>
+        <div class="btns" style="margin-top:8px">
+            <button @click="$store.app.closeFolderModal()">取消</button>
+            <button style="background:var(--accent);color:var(--on-accent);border-color:var(--accent)" @click="$store.app.submitFolder()">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- 确认对话框 -->
+<div class="modal-overlay" x-show="$store.app.showConfirmModal" style="z-index:1010" @click.self="$store.app.closeConfirmModal()">
+    <div class="modal" style="max-width:340px">
+        <button class="modal-close" @click="$store.app.closeConfirmModal()">✕</button>
+        <h3 x-text="$store.app.confirmTitle"></h3>
+        <p style="white-space:pre-line" x-text="$store.app.confirmMsg"></p>
+        <div class="btns">
+            <button @click="$store.app.closeConfirmModal()">取消</button>
+            <button class="btn-danger" @click="$store.app.confirmConfirm()">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- 回退确认 -->
+<div class="modal-overlay" x-show="$store.app.showRollbackModal" @click.self="$store.app.closeRollbackModal()">
+    <div class="modal">
+        <button class="modal-close" @click="$store.app.closeRollbackModal()">✕</button>
+        <h3>回退对话</h3>
+        <p id="rollbackHint"></p>
+        <div class="btns">
+            <button @click="$store.app.closeRollbackModal()">取消</button>
+            <button class="btn-danger" @click="$store.app.confirmRollback()">确认回退</button>
+        </div>
+    </div>
+</div>
+
+<!-- API Key -->
+<div class="modal-overlay" x-show="$store.app.showApiKeyModal" @click.self="$store.app.closeApiKeyModal()">
+    <div class="modal">
+        <button class="modal-close" @click="$store.app.closeApiKeyModal()">✕</button>
+        <h3>🔑 设置 API Key</h3>
+        <p>请输入你的 DeepSeek API Key：</p>
+        <input type="password" placeholder="sk-..." x-model="$store.app.apiKeyInput">
+        <p style="font-size:11px;color:var(--sub)">Key 将保存在本地，仅用于调用 DeepSeek API</p>
+        <p style="font-size:12px;color:var(--danger)" x-show="$store.app.apiKeyError" x-text="$store.app.apiKeyError"></p>
+        <div class="btns" style="margin-top:8px">
+            <button @click="$store.app.closeApiKeyModal()">取消</button>
+            <button style="background:var(--accent);color:var(--on-accent);border-color:var(--accent)" @click="$store.app.submitApiKey()">确认</button>
+        </div>
+    </div>
+</div>
+
+<!-- 提示词管理 -->
+<div class="modal-overlay" x-show="$store.app.showPromptModal" @click.self="$store.app.closePromptModal()">
+    <div class="modal" style="max-width:560px">
+        <button class="modal-close" @click="$store.app.closePromptModal()">✕</button>
+        <h3>💬 提示词管理</h3>
+        <!-- 列表 -->
+        <div x-show="$store.app.promptListOpen" style="max-height:260px;overflow-y:auto;margin:8px 0">
+            <div class="prompt-item" :class="{ active: !$store.app.defaultPromptId }"
+                @click="$store.app.selectPrompt(null)">
+                <div class="prompt-name">🚫 无提示词</div>
+            </div>
+            <template x-for="p in $store.app.prompts" :key="p.id">
+                <div class="prompt-item" :class="{ active: $store.app.defaultPromptId === p.id }">
+                    <div style="flex:1" @click="$store.app.selectPrompt(p.id)">
+                        <div class="prompt-name" x-text="p.name"></div>
+                        <div style="font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" x-text="p.content"></div>
+                    </div>
+                    <div class="prompt-actions">
+                        <button class="prompt-act" @click.stop="$store.app.startEditPrompt(p.id)" title="编辑">✏️</button>
+                        <button class="prompt-act del" @click.stop="$store.app.deletePrompt(p.id)" title="删除">🗑</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <button class="prompt-add-btn" @click="$store.app.startAddPrompt()" x-show="$store.app.promptListOpen">＋ 新建提示词</button>
+        <!-- 编辑器 -->
+        <div x-show="$store.app.promptEditorOpen">
+            <input type="text" placeholder="提示词名称" maxlength="30" x-model="$store.app.promptEditName"
+                style="width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;outline:none">
+            <textarea placeholder="输入提示词内容..." rows="8" x-model="$store.app.promptEditContent"
+                style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);resize:vertical;font-family:inherit;font-size:13px;line-height:1.7;outline:none;min-height:160px"></textarea>
+            <div class="btns" style="margin-top:10px">
+                <button @click="$store.app.cancelEditPrompt()">取消</button>
+                <button style="background:var(--accent);color:var(--on-accent);border-color:var(--accent)" @click="$store.app.savePrompt()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 查看提示词 -->
+<div class="modal-overlay" x-show="$store.app.showViewPromptModal" @click.self="$store.app.closeViewPrompt()">
+    <div class="modal" style="max-width:520px">
+        <button class="modal-close" @click="$store.app.closeViewPrompt()">✕</button>
+        <h3>💬 当前提示词</h3>
+        <pre style="background:var(--surface-secondary);padding:16px;border-radius:10px;white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.7;max-height:400px;overflow-y:auto;color:var(--text);user-select:text;margin:8px 0"
+            x-text="$store.app.viewPromptContent"></pre>
+    </div>
+</div>
+
+<script>
+// Bridge-ready guard
+var pywebviewReady = false;
+</script>
+<script>
+{{JS}}
+</script>
+</body>
+</html>

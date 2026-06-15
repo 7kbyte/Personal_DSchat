@@ -1,0 +1,41 @@
+.messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;user-select:text;-webkit-user-select:text;transition:opacity .08s;transform:translateZ(0)}
+.msg{display:flex;gap:10px;max-width:82%;animation:fadeIn .2s;will-change:transform,opacity}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;font-weight:600}
+.msg-side .avatar{width:32px;height:32px}
+.msg.user .avatar{background:var(--accent);color:var(--on-accent)}
+.msg.assistant .avatar{background:var(--accent-alt);color:#fff}
+.bubble{padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.65;overflow-wrap:anywhere;word-break:break-word;box-shadow:0 3px 12px rgba(0,0,0,.15),0 1px 3px rgba(0,0,0,.09);user-select:text;-webkit-user-select:text;transition:box-shadow .2s}
+.msg:hover .bubble{box-shadow:0 6px 24px rgba(0,0,0,.18),0 3px 6px rgba(0,0,0,.12)}
+.msg-actions{display:flex;align-items:center;opacity:0;transition:opacity .2s;flex-shrink:0}
+.msg:hover .msg-actions{opacity:1}
+.regenerate-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--sub)}
+.regenerate-btn:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.msg.user .bubble{background:var(--user-bubble);border-bottom-right-radius:4px}
+.msg.assistant .bubble{flex:1 1 0%;min-width:0;background:var(--ai-bubble);border-bottom-left-radius:4px;opacity:.82}
+.msg.assistant.narrow{align-self:flex-start}
+.msg.assistant.narrow .bubble{flex:0 1 auto;min-width:auto}
+.msg-side{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+.msg-time{font-size:10px;color:var(--sub);opacity:0;transition:opacity .2s;white-space:nowrap}
+.msg:hover .msg-time{opacity:.7}
+.bubble p{margin:4px 0}
+.bubble pre{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:14px;overflow-x:auto;margin:8px 0;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;user-select:text;position:relative}
+.code-copy-btn{position:absolute;top:8px;right:8px;padding:3px 7px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;transition:all .15s;opacity:0;line-height:1}
+.bubble pre:hover .code-copy-btn{opacity:1}
+.code-copy-btn:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.4)}
+.bubble code{font-family:"SF Mono","Menlo","Consolas","Cascadia Code",monospace;font-size:13px}
+.bubble :not(pre)>code{background:var(--accent-soft);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--accent)}
+.bubble ul,.bubble ol{margin:6px 0;padding-left:22px}
+.bubble li{margin:2px 0}
+.bubble h1,.bubble h2,.bubble h3,.bubble h4{margin:10px 0 4px}
+.bubble h1{font-size:1.3em}.bubble h2{font-size:1.15em}.bubble h3{font-size:1.05em}
+.bubble blockquote{border-left:3px solid var(--accent);margin:6px 0;padding:8px 14px;color:var(--text);opacity:.85;background:var(--accent-soft);border-radius:0 6px 6px 0}
+.bubble table{border-collapse:collapse;margin:6px 0;max-width:100%}
+.bubble th,.bubble td{border:1px solid var(--border);padding:6px 10px;text-align:left;font-size:13px}
+.bubble th{background:var(--surface-secondary);font-weight:600}
+.bubble img{max-width:100%;border-radius:6px}
+.katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0;max-width:100%}
+.reasoning-toggle{cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;user-select:none;padding:4px 0;display:inline-flex;align-items:center;gap:4px}
+.reasoning-content{margin-top:6px;padding:10px 14px;background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;font-size:12px;color:var(--sub);line-height:1.6;display:none;max-height:300px;overflow-y:auto;user-select:text}
+.reasoning-content.open{display:block}

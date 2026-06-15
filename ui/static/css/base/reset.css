@@ -1,0 +1,1 @@
+body{font-family:"SF Pro Display","PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;background:var(--bg);background-attachment:fixed;color:var(--text);height:100vh;display:flex;overflow:hidden;font-size:14px;position:relative;transition:background .5s,color .3s}

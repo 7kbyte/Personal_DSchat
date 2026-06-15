@@ -1,4 +1,5 @@
-// ==================== 初始化 ====================
+// ==================== 窗口拖拽/缩放 + 键盘 ====================
+// Alpine 负责所有业务逻辑初始化 ($store.app.init())
 var _maximized = false;
 var _dragInfo = null;
 var _winX = 0, _winY = 0, _winW = 800, _winH = 600;
@@ -7,14 +8,11 @@ var _movePending = false;
 async function onMaximizeToggle() {
     if (typeof pywebview === 'undefined' || !pywebview.api) return;
     try {
-        if (_maximized) {
-            await pywebview.api.restoreWindow();
-        } else {
-            await pywebview.api.maximizeWindow();
-        }
+        if (_maximized) { await pywebview.api.restoreWindow(); }
+        else { await pywebview.api.maximizeWindow(); }
         _maximized = !_maximized;
         var btn = document.getElementById('btnMaximize');
-        if (btn) { btn.textContent = _maximized ? '❐' : '□'; }
+        if (btn) { btn.textContent = _maximized ? '\u2750' : '\u25A1'; }
     } catch(e) {}
 }
 
@@ -23,7 +21,7 @@ function _flushMove() {
     _movePending = false;
     if (_dragInfo) {
         pywebview.api.moveWindow(_dragInfo.nx, _dragInfo.ny);
-    } else if (_resizeDir) {
+    } else if (typeof _resizeDir !== 'undefined' && _resizeDir) {
         pywebview.api.resizeWindow(_resizeGeo.nx, _resizeGeo.ny, _resizeGeo.nw, _resizeGeo.nh);
     }
 }
@@ -54,7 +52,6 @@ function setupWindowDrag() {
     document.addEventListener('mouseup', function() { _dragInfo = null; });
 }
 
-// ==================== 窗口缩放 ====================
 var _resizeDir = null, _resizeGeo = null, _resizeMouse = null;
 var MIN_W = 600, MIN_H = 400;
 
@@ -93,96 +90,21 @@ document.addEventListener('mousemove', function(e) {
 
 document.addEventListener('mouseup', function() { _resizeDir = null; });
 
-async function init() {
-    if (pywebviewReady) return;
-
-    const apiReady = function() { return typeof pywebview !== 'undefined' && pywebview.api; };
-
-    // 1. 加载对话状态
-    if (apiReady()) {
-        try {
-            const raw = await pywebview.api.loadState();
-            const data = JSON.parse(raw);
-            state.conversations = data.conversations || [];
-            state.folders = data.folders || [];
-            state.currentId = data.currentId || null;
-        } catch(e) { console.error('[init] loadState:', e); }
-    }
-
-    if (state.folders.length === 0) {
-        state.folders = [{ id: 'f_default', name: '\u{1F4C1} \u9ED8\u8BA4\u6536\u85CF\u5939', icon: '\u{1F4C1}', order: 0 }];
-    }
-    if (state.conversations.length === 0) {
-        newConv();
-    } else {
-        const cur = state.conversations.find(c => c.id === state.currentId);
-        if (!cur) state.currentId = state.conversations[0].id;
-        renderAll();
-    }
-    // 初始化窗口位置缓存
-    if (apiReady()) {
-        try {
-            var r = JSON.parse(await pywebview.api.getWindowRect());
-            _winX = r.x; _winY = r.y; _winW = r.w; _winH = r.h;
-        } catch(e) {}
-    }
-    setupWindowDrag();
-
-    // 2. API 未就绪则延迟重试
-    if (!apiReady()) {
-        setTimeout(function() { init(); }, 200);
-        return;
-    }
-
-    pywebviewReady = true;
-
-    // 侧栏宽度
-    try { const w = await pywebview.api.getSidebarWidth(); if (w) setSidebarWidth(w); } catch(e) {}
-    // 抽屉宽度
-    try { const dw = await pywebview.api.loadSetting('drawer_width'); if (dw) setDrawerWidth(parseInt(dw)); } catch(e) {}
-
-    // 主题
-    try {
-        const theme = await pywebview.api.getTheme();
-        const valid = ['light','dark','sky','ocean','leaf','forest','rose','bloom','sunset','cosmos'];
-        const name = valid.includes(theme) ? theme : 'light';
-        document.body.dataset.theme = name;
-        var dot = document.querySelector('.theme-dot[onclick*=\"' + name + '\"]');
-        if (dot) dot.classList.add('active');
-    } catch(e) {}
-
-    // 设置栏折叠状态
-    try { const v = await pywebview.api.loadSetting('settings_collapsed'); if (v === '1') document.getElementById('settingsCard').classList.add('collapsed'); } catch(e) {}
-
-    // 模型设置
-    try {
-        const model = await pywebview.api.loadSetting('model');
-        if (model) { var btn = document.querySelector('#modelSeg .seg-btn[data-val=\"' + model + '\"]'); if (btn) pickModel(btn); }
-        const thinking = await pywebview.api.loadSetting('thinking');
-        document.getElementById('thinkToggle').checked = (thinking === '1');
-        const effort = await pywebview.api.loadSetting('effort');
-        if (effort) { var ebtn = document.querySelector('#effortSeg .seg-btn[data-val=\"' + effort + '\"]'); if (ebtn) pickEffort(ebtn); }
-        updateStatus();
-    } catch(e) {}
-
-    // 加载提示词
-    try {
-        const promptsRaw = await pywebview.api.loadPrompts();
-        if (promptsRaw) state.prompts = JSON.parse(promptsRaw);
-    } catch(e) {}
-
-    // API Key 检查
-    try {
-        const hasKey = await pywebview.api.hasApiKey();
-        if (!hasKey) document.getElementById('apiKeyModal').style.display = 'flex';
-    } catch(e) {}
-
-    // 确保默认设置已写入磁盘
-    if (typeof saveAllSettings === 'function') saveAllSettings();
+// Helper functions called from Alpine template
+function onKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+function autoResize(e) {
+    var ta = e ? e.target : document.getElementById('input');
+    if (ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 140) + 'px'; }
+}
+function fmtTime(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
 }
 
-// ---- 全局持久化 ----
-function save() {
-    if (typeof pywebview === 'undefined' || !pywebview.api) return;
-    try { pywebview.api.saveState(JSON.stringify(state.conversations), JSON.stringify(state.folders), state.currentId); } catch(e) {}
-}
+// 启动 Alpine 初始化（在 Alpine 就绪后）
+document.addEventListener('alpine:initialized', function() {
+    $store.app.init();
+});

@@ -1,4 +1,6 @@
 // ==================== 拖拽 ====================
+// 状态读取自 Alpine.store('app')
+var $a = function() { return Alpine.store('app'); };
 let dragFolderId = null, dragConvId = null, dragPinnedId = null;
 
 function onFolderDragStart(e, folderId) { dragFolderId = folderId; e.target.closest('.folder-item')?.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
@@ -8,16 +10,16 @@ function onFolderDragLeave(e) { e.target.closest('.folder-item')?.classList.remo
 function onFolderDrop(e, targetFolderId) {
     e.preventDefault(); e.target.closest('.folder-item')?.classList.remove('drag-over');
     if (!dragFolderId || dragFolderId === targetFolderId) return;
-    const fromIdx = state.folders.findIndex(f => f.id === dragFolderId);
-    const toIdx = state.folders.findIndex(f => f.id === targetFolderId);
+    var a = $a();
+    var fromIdx = a.folders.findIndex(f => f.id === dragFolderId);
+    var toIdx = a.folders.findIndex(f => f.id === targetFolderId);
     if (fromIdx < 0 || toIdx < 0) return;
-    const item = state.folders.splice(fromIdx, 1)[0];
-    state.folders.splice(toIdx, 0, item);
-    state.folders.forEach((f, i) => f.order = i);
-    renderFolderList(); save();
+    var item = a.folders.splice(fromIdx, 1)[0];
+    a.folders.splice(toIdx, 0, item);
+    a.folders.forEach((f, i) => f.order = i);
+    a._save();
 }
 
-// ---- 顶置对话拖拽重排 ----
 function onPinnedDragStart(e, convId) { dragPinnedId = convId; e.target.closest('.pinned-item')?.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
 function onPinnedDragEnd(e) { e.target.closest('.pinned-item')?.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); dragPinnedId = null; }
 function onPinnedDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.target.closest('.pinned-item')?.classList.add('drag-over'); }
@@ -25,43 +27,42 @@ function onPinnedDragLeave(e) { e.target.closest('.pinned-item')?.classList.remo
 function onPinnedDrop(e, targetConvId) {
     e.preventDefault(); e.stopPropagation(); e.target.closest('.pinned-item')?.classList.remove('drag-over');
     if (!dragPinnedId || dragPinnedId === targetConvId) return;
-    const fromIdx = state.conversations.findIndex(c => c.id === dragPinnedId);
-    const toIdx = state.conversations.findIndex(c => c.id === targetConvId);
+    var a = $a();
+    var fromIdx = a.conversations.findIndex(c => c.id === dragPinnedId);
+    var toIdx = a.conversations.findIndex(c => c.id === targetConvId);
     if (fromIdx < 0 || toIdx < 0) return;
-    const item = state.conversations.splice(fromIdx, 1)[0];
-    state.conversations.splice(toIdx, 0, item);
-    renderPinned(); save();
+    var item = a.conversations.splice(fromIdx, 1)[0];
+    a.conversations.splice(toIdx, 0, item);
+    a._save();
 }
 
-// ---- 抽屉对话拖拽重排 ----
 function onDrawerConvDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.target.closest('.drawer-conv-item')?.classList.add('drag-over'); }
 function onDrawerConvDragLeave(e) { e.target.closest('.drawer-conv-item')?.classList.remove('drag-over'); }
 function onDrawerConvDrop(e, targetConvId) {
     e.preventDefault(); e.stopPropagation(); e.target.closest('.drawer-conv-item')?.classList.remove('drag-over');
     if (!dragConvId || dragConvId === targetConvId) return;
-    const fromIdx = state.conversations.findIndex(c => c.id === dragConvId);
-    const toIdx = state.conversations.findIndex(c => c.id === targetConvId);
+    var a = $a();
+    var fromIdx = a.conversations.findIndex(c => c.id === dragConvId);
+    var toIdx = a.conversations.findIndex(c => c.id === targetConvId);
     if (fromIdx < 0 || toIdx < 0) return;
-    const item = state.conversations.splice(fromIdx, 1)[0];
-    state.conversations.splice(toIdx, 0, item);
-    renderDrawerConvs(); save();
+    var item = a.conversations.splice(fromIdx, 1)[0];
+    a.conversations.splice(toIdx, 0, item);
+    a._save();
 }
 function onDrawerConvDragEnd(e) { e.target.closest('.drawer-conv-item')?.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); dragConvId = null; }
-
 function onDrawerConvDragStart(e, convId) { dragConvId = convId; e.target.closest('.drawer-conv-item')?.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
-function onDragEnd(e) { e.target.closest('.drawer-conv-item')?.classList.remove('dragging'); document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over')); dragConvId = null; }
 
 document.addEventListener('dragover', function(e) {
-    const folderEl = e.target.closest('.folder-item');
+    var folderEl = e.target.closest('.folder-item');
     if (folderEl && dragConvId) { e.preventDefault(); folderEl.classList.add('drag-over'); }
 });
 document.addEventListener('dragleave', function(e) {
-    const folderEl = e.target.closest('.folder-item');
+    var folderEl = e.target.closest('.folder-item');
     if (folderEl && dragConvId) folderEl.classList.remove('drag-over');
 });
 document.addEventListener('drop', function(e) {
-    const folderEl = e.target.closest('.folder-item');
-    if (folderEl && dragConvId) { e.preventDefault(); folderEl.classList.remove('drag-over'); moveConvToFolder(dragConvId, folderEl.dataset.folderId); dragConvId = null; }
+    var folderEl = e.target.closest('.folder-item');
+    if (folderEl && dragConvId) { e.preventDefault(); folderEl.classList.remove('drag-over'); $a().moveConvToFolder(dragConvId, folderEl.dataset.folderId); dragConvId = null; }
 });
 
 // ==================== 侧栏拖拽调整宽度 ====================

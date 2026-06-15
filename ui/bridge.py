@@ -1,276 +1,160 @@
 """
 Python <-> JavaScript bridge module
-Exposes Python backend methods to pywebview JS API
+轻量桥接层 —— 委托给 services/ 中的各服务
 """
-
 import json
-import threading
 import traceback
 import webview
 
-from config import load_api_key, save_api_key, load_sidebar_width, save_sidebar_width, load_theme, save_theme, load_setting, save_setting, save_settings, save_window_geometry, load_prompts, save_prompts
-from api.deepseek import chat_stream, verify_api_key
-from storage.history import save as save_history, load as load_history
+from services.storage_service import StorageService
+from services.api_service import ApiService
+from services.window_service import WindowService
 
 
 class Bridge:
     """Python API exposed to JavaScript via pywebview"""
 
     def __init__(self):
-        self.conversations, self.folders, self.current_id = load_history()
-        self._lock = threading.Lock()
-        self._loading = False
-        self._stop_flag = False
-        load_api_key()
-        print(f"[Bridge] loaded {len(self.conversations)} conversations, "
-              f"{len(self.folders)} folders, "
-              f"API Key {'set' if load_api_key() else 'not set'}")
+        self.storage = StorageService()
+        self.api = ApiService()
+        self.win = WindowService()
 
-    # ---- API Key ----
+    # ── API Key ─────────────────────────────────────────────
     def hasApiKey(self) -> bool:
-        key = load_api_key()
+        key = self.storage.get_api_key()
         if not key:
             return False
-        return verify_api_key(key)
+        return self.api.verify_key(key)
 
     def setApiKey(self, key: str) -> bool:
         key = key.strip()
         if not key or not key.startswith("sk-"):
             return False
-        if not verify_api_key(key):
+        if not self.api.verify_key(key):
             return False
-        save_api_key(key)
+        self.storage.set_api_key(key)
         print("[Bridge] API Key verified and saved")
         return True
 
-    # ---- 侧栏宽度 ----
+    # ── 侧栏宽度 / 主题 / 设置 ──────────────────────────────
     def getSidebarWidth(self) -> int:
-        return load_sidebar_width()
+        return self.storage.get_sidebar_width()
 
     def setSidebarWidth(self, width: int):
-        save_sidebar_width(int(width))
+        self.storage.set_sidebar_width(int(width))
 
-    # ---- 主题 ----
     def getTheme(self) -> str:
-        return load_theme()
+        return self.storage.get_theme()
 
     def setTheme(self, theme: str):
-        save_theme(theme)
+        self.storage.set_theme(theme)
 
-    # ---- 通用设置存取 ----
     def loadSetting(self, key: str) -> str:
-        return load_setting(key, "")
+        return self.storage.get_setting(key)
 
     def saveSetting(self, key: str, value: str):
-        save_setting(key, value)
+        self.storage.put_setting(key, value)
 
     def saveSettings(self, settings_json: str):
-        """批量保存设置（一次原子写入）"""
-        import json
         try:
             data = json.loads(settings_json)
-            save_settings(data)
+            self.storage.put_settings(data)
         except Exception:
             pass
 
-    # ---- 提示词 ----
+    # ── 提示词 ──────────────────────────────────────────────
     def loadPrompts(self) -> str:
-        import json
-        return json.dumps(load_prompts(), ensure_ascii=False)
+        return json.dumps(self.storage.get_prompts(), ensure_ascii=False)
 
     def savePrompts(self, prompts_json: str):
-        import json
         try:
             data = json.loads(prompts_json)
-            save_prompts(data)
+            self.storage.put_prompts(data)
         except Exception:
             pass
 
+    # ── 窗口几何保存 ────────────────────────────────────────
     def saveWindowSize(self, w: int, h: int):
         try:
-            if webview.windows:
-                win = webview.windows[0]
-                save_window_geometry(win.x, win.y, int(w), int(h))
+            rect = json.loads(self.win.get_rect())
+            self.storage.save_window_rect(rect["x"], rect["y"],
+                                          int(w), int(h))
         except Exception:
             pass
 
-    # ---- 窗口控制 ----
+    # ── 窗口控制 ────────────────────────────────────────────
     def minimizeWindow(self):
-        try:
-            if webview.windows:
-                webview.windows[0].minimize()
-        except Exception:
-            pass
+        self.win.minimize()
 
     def maximizeWindow(self):
-        """最大化——任务栏感知：使用 SPI_GETWORKAREA + DPI 转换"""
-        try:
-            if not webview.windows:
-                return
-            import ctypes
-            win = webview.windows[0]
-            hwnd = ctypes.windll.user32.FindWindowW(None, "DeepSeek Chat")
-            if not hwnd:
-                return
-            # 计算 DPI 缩放比：物理像素 / pywebview 逻辑像素
-            r = (ctypes.c_long * 4)()
-            ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(r))
-            scale = (r[2] - r[0]) / max(win.width, 1)
-            # 获取工作区（排除任务栏），转为 pywebview 逻辑坐标
-            wa = (ctypes.c_long * 4)()
-            ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(wa), 0)
-            nx = int(wa[0] / scale)
-            ny = int(wa[1] / scale)
-            nw = int((wa[2] - wa[0]) / scale)
-            nh = int((wa[3] - wa[1]) / scale)
-            self._restore_geo = (win.x, win.y, win.width, win.height)
-            win.move(nx, ny)
-            win.resize(nw, nh)
-        except Exception:
-            pass
+        self.win.maximize()
 
     def restoreWindow(self):
-        try:
-            if webview.windows and hasattr(self, '_restore_geo') and self._restore_geo:
-                x, y, w, h = self._restore_geo
-                webview.windows[0].move(x, y)
-                webview.windows[0].resize(w, h)
-                self._restore_geo = None
-        except Exception:
-            pass
+        self.win.restore()
 
     def getWindowRect(self) -> str:
-        """获取窗口位置尺寸——使用 pywebview 内部坐标（已处理 DPI 缩放）"""
-        import json
-        try:
-            if webview.windows:
-                win = webview.windows[0]
-                return json.dumps({"x": win.x, "y": win.y, "w": win.width, "h": win.height})
-        except Exception:
-            pass
-        return '{"x":0,"y":0,"w":800,"h":600}'
+        return self.win.get_rect()
 
     def moveWindow(self, x: int, y: int):
-        """移动窗口——使用 pywebview 内部坐标"""
-        try:
-            if webview.windows:
-                webview.windows[0].move(int(x), int(y))
-        except Exception:
-            pass
+        self.win.move(x, y)
 
     def closeWindow(self):
-        try:
-            if webview.windows:
-                webview.windows[0].destroy()
-        except Exception:
-            pass
+        self.win.close()
 
     def resizeWindow(self, x: int, y: int, w: int, h: int):
-        """缩放窗口——使用 pywebview 内部坐标"""
-        try:
-            if webview.windows:
-                win = webview.windows[0]
-                win.move(int(x), int(y))
-                win.resize(int(w), int(h))
-        except Exception:
-            pass
-        except Exception:
-            pass
+        self.win.resize(x, y, w, h)
 
-    # ---- History ----
+    # ── 剪贴板 ──────────────────────────────────────────────
+    def copyToClipboard(self, text: str):
+        WindowService.copy_to_clipboard(text)
+
+    # ── 对话状态 ────────────────────────────────────────────
     def loadState(self) -> str:
-        data = json.dumps({
-            "conversations": self.conversations,
-            "folders": self.folders,
-            "currentId": self.current_id,
-        }, ensure_ascii=False)
-        return data
+        return json.dumps(self.storage.get_state(), ensure_ascii=False)
 
-    def saveState(self, convs_json: str, folders_json: str, current_id: str):
+    def saveState(self, convs_json: str, folders_json: str,
+                  current_id: str):
         try:
-            self.conversations = json.loads(convs_json)
-            self.folders = json.loads(folders_json)
-            self.current_id = current_id
-            save_history(self.conversations, self.folders, self.current_id)
-            print(f"[Bridge] saved {len(self.conversations)} conversations, "
-                  f"{len(self.folders)} folders")
+            conversations = json.loads(convs_json)
+            folders = json.loads(folders_json)
+            self.storage.put_state(conversations, folders, current_id)
         except Exception as e:
-            print(f"[Bridge] save failed: {e}")
+            print(f"[Bridge] saveState failed: {e}")
             traceback.print_exc()
 
-    # ---- API call (async) ----
+    # ── API 流式调用 ────────────────────────────────────────
     def sendMessage(self, params_json: str):
-        with self._lock:
-            if self._loading:
-                return
-            self._loading = True
-            self._stop_flag = False
-
         try:
             data = json.loads(params_json)
         except Exception as e:
             print(f"[Bridge] sendMessage parse error: {e}")
-            with self._lock:
-                self._loading = False
             return
-        threading.Thread(target=self._do_send, args=(data,), daemon=True).start()
+
+        def _on_chunk(content, reasoning):
+            chunk = json.dumps({
+                "type": "chunk",
+                "content": content,
+                "reasoning_content": reasoning,
+            }, ensure_ascii=False)
+            self._eval_js(f"window._onStreamChunk({chunk})")
+
+        def _on_done(ok, error):
+            result = json.dumps(
+                {"type": "done", "ok": ok, "error": error},
+                ensure_ascii=False,
+            )
+            self._eval_js(f"window._onStreamDone({result})")
+
+        self.api.send_message(data, _on_chunk, _on_done)
 
     def stopGeneration(self):
-        with self._lock:
-            self._stop_flag = True
-        print("[Bridge] stop requested")
+        self.api.stop()
 
-    def _do_send(self, data: dict):
-        try:
-            msgs = data["messages"]
-            model = data["model"]
-            thinking = data.get("thinking", True)
-            effort = data.get("reasoning_effort", "high")
-            print(f"[Bridge] API call: model={model}, thinking={thinking}, effort={effort}, msgs={len(msgs)}")
-
-            for delta_content, delta_reasoning in chat_stream(msgs, model, thinking, effort):
-                with self._lock:
-                    if self._stop_flag:
-                        break
-                chunk = json.dumps({
-                    "type": "chunk",
-                    "content": delta_content,
-                    "reasoning_content": delta_reasoning,
-                }, ensure_ascii=False)
-                self._eval_js(f"window._onStreamChunk({chunk})")
-
-            result = json.dumps({"type": "done", "ok": True}, ensure_ascii=False)
-            self._eval_js(f"window._onStreamDone({result})")
-            print(f"[Bridge] stream complete")
-
-        except Exception as e:
-            print(f"[Bridge] API error: {e}")
-            traceback.print_exc()
-            result = json.dumps({"type": "done", "ok": False, "error": str(e)}, ensure_ascii=False)
-            self._eval_js(f"window._onStreamDone({result})")
-        finally:
-            with self._lock:
-                self._loading = False
-
-    def _eval_js(self, code: str):
+    # ── internal ────────────────────────────────────────────
+    @staticmethod
+    def _eval_js(code: str):
         try:
             if webview.windows:
                 webview.windows[0].evaluate_js(code)
         except Exception as e:
             print(f"[Bridge] evaluate_js failed: {e}")
-
-    # ---- Clipboard ----
-    def copyToClipboard(self, text: str):
-        try:
-            import ctypes
-            size = (len(text) + 1) * 2
-            hmem = ctypes.windll.kernel32.GlobalAlloc(0x2000, size)
-            ptr = ctypes.windll.kernel32.GlobalLock(hmem)
-            ctypes.cdll.msvcrt.memcpy(ptr, text.encode("utf-16-le"), size - 2)
-            ctypes.windll.kernel32.GlobalUnlock(hmem)
-            ctypes.windll.user32.OpenClipboard(0)
-            ctypes.windll.user32.EmptyClipboard()
-            ctypes.windll.user32.SetClipboardData(13, hmem)
-            ctypes.windll.user32.CloseClipboard()
-        except Exception:
-            pass

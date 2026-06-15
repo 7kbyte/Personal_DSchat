@@ -1,0 +1,5 @@
+.context-menu{position:fixed;background:var(--surface);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:6px;z-index:999;display:none;min-width:150px;border:1px solid var(--border)}
+.context-menu .item{padding:9px 14px;border-radius:7px;cursor:pointer;font-size:13px;transition:background .1s;color:var(--text)}
+.context-menu .item:hover{background:var(--accent-soft);color:var(--accent)}
+.context-menu .item.danger{color:var(--danger)}
+.context-menu .item.danger:hover{background:rgba(231,76,60,.1)}
