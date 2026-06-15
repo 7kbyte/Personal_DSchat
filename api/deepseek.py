@@ -43,15 +43,12 @@ def chat(messages: list, model: str, thinking: bool,
 
 
 def chat_stream(messages: list, model: str, thinking: bool,
-                reasoning_effort: str = "high") -> Generator[Tuple[str, str], None, None]:
+                reasoning_effort: str = "high") -> Generator[Tuple[str, str, dict | None], None, None]:
     """
     调用 DeepSeek Chat API（流式 SSE）。
 
-    使用逐行读取 (readline)，每收到一行立即 yield，
-    保证流式输出的平滑渲染节奏。
-
     Yields:
-        (delta_content, delta_reasoning) — 每次 yield 一个增量片段
+        (delta_content, delta_reasoning, usage) — usage 仅在最后一个 chunk 非 None
     """
     api_key = load_api_key()
     if not api_key:
@@ -74,8 +71,9 @@ def chat_stream(messages: list, model: str, thinking: bool,
                     delta = chunk["choices"][0].get("delta", {})
                     content = delta.get("content", "") or ""
                     reasoning = delta.get("reasoning_content", "") or ""
-                    if content or reasoning:
-                        yield content, reasoning
+                    usage = chunk.get("usage", None)
+                    if content or reasoning or usage:
+                        yield content, reasoning, usage
                 except (json.JSONDecodeError, KeyError, IndexError):
                     continue
     except http.client.IncompleteRead:
@@ -87,10 +85,11 @@ def chat_stream(messages: list, model: str, thinking: bool,
         raise RuntimeError(f"网络错误: {e.reason}")
 
 
-def verify_api_key(api_key: str) -> bool:
-    """验证 API Key 是否有效（发送最小请求，仅消耗 1 token）"""
+def verify_api_key(api_key: str) -> tuple:
+    """验证 API Key。返回 (ok: bool, error: str|None)
+    error 可能为 'network'（网络不通）或 'auth'（Key 无效）"""
     if not api_key:
-        return False
+        return False, None
     body = {
         "model": "deepseek-v4-flash",
         "messages": [{"role": "user", "content": "hi"}],
@@ -107,12 +106,14 @@ def verify_api_key(api_key: str) -> bool:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return resp.status == 200
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status == 200, None
     except urllib.error.HTTPError as e:
-        return False
+        if e.code in (401, 403):
+            return False, 'auth'
+        return False, 'network'
     except Exception:
-        return False
+        return False, 'network'
 
 
 # ==================== 内部辅助 ====================

@@ -13,6 +13,7 @@ venv/
 # Node.js / TypeScript
 node_modules/
 ui/static/js/*.js
+ui/static/index_generated.html
 
 # IDE
 .vscode/

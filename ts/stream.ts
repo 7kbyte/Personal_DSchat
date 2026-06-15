@@ -59,18 +59,31 @@ async function send(): Promise<void> {
   updateLastMessage();
 };
 
-(window as any)._onStreamDone = function (data: { ok: boolean; error?: string }): void {
+(window as any)._onStreamDone = function (data: { ok: boolean; error?: string; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number } }): void {
   const app = Alpine.store('app');
   app.loading = false;
   setLoading(false);
   const conv = app.current;
   if (!conv) return;
+  app.online = data.ok;
   if (!data.ok) {
     const lastMsg = conv.messages[conv.messages.length - 1];
     if (lastMsg && lastMsg.role === 'assistant') { lastMsg.content = '❌ 错误: ' + (data.error || '未知错误'); lastMsg.reasoning_content = ''; }
   } else {
     const lastMsg2 = conv.messages[conv.messages.length - 1];
     if (lastMsg2 && lastMsg2.role === 'assistant') lastMsg2.timestamp = Date.now();
+    // 累加对话 token 用量
+    if (data.usage) {
+      conv.promptTokens = (conv.promptTokens || 0) + data.usage.prompt_tokens;
+      conv.completionTokens = (conv.completionTokens || 0) + data.usage.completion_tokens;
+      conv.totalTokens = (conv.totalTokens || 0) + data.usage.total_tokens;
+      // 累加全局用量
+      app.globalTokens = (app.globalTokens || 0) + data.usage.total_tokens;
+      // 持久化全局 token
+      if (app._apiReady()) {
+        try { pywebview!.api.saveSetting('global_tokens', String(app.globalTokens)); } catch (e) {}
+      }
+    }
   }
   renderMessages();
   app._save();

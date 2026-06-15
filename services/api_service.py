@@ -17,12 +17,16 @@ class ApiService:
         self._stop_flag = False
 
     # ── Key 验证 ────────────────────────────────────────────
-    def verify_key(self, key: str) -> bool:
+    def verify_key(self, key: str):
+        """返回 (ok: bool, error: str|None) — 'network' 或 'auth'"""
         return verify_api_key(key)
 
-    def has_valid_key(self) -> bool:
+    def has_valid_key(self):
+        """返回 (ok: bool, error: str|None)"""
         key = load_api_key()
-        return bool(key) and verify_api_key(key)
+        if not key:
+            return False, None
+        return verify_api_key(key)
 
     # ── 流式聊天 ────────────────────────────────────────────
     def send_message(self, params: dict, on_chunk, on_done):
@@ -34,6 +38,7 @@ class ApiService:
             self._stop_flag = False
 
         def _run():
+            final_usage = None
             try:
                 msgs = params["messages"]
                 model = params["model"]
@@ -42,14 +47,16 @@ class ApiService:
                 print(f"[API] call: model={model}, thinking={thinking}, "
                       f"effort={effort}, msgs={len(msgs)}")
 
-                for delta_content, delta_reasoning in chat_stream(
+                for delta_content, delta_reasoning, usage in chat_stream(
                         msgs, model, thinking, effort):
                     with self._lock:
                         if self._stop_flag:
                             break
                     on_chunk(delta_content, delta_reasoning)
+                    if usage is not None:
+                        final_usage = usage
 
-                on_done(True, None)
+                on_done(True, None, final_usage)
                 print("[API] stream complete")
 
             except Exception as e:

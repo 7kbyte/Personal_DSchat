@@ -28,8 +28,7 @@
 .folder-item .folder-count{font-size:11px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:10px;flex-shrink:0;font-weight:600}
 .folder-item.drag-over{background:var(--accent-soft);border:1px dashed var(--accent);transform:scale(1.02);transition:all .15s}
 .folder-item.dragging{opacity:.35;transform:scale(.96);transition:all .15s}
-.btn-new-folder{margin:6px 8px 10px;padding:8px 12px;border:1px dashed var(--border);border-radius:10px;background:transparent;color:var(--sub);font-size:12px;cursor:pointer;transition:all .2s;text-align:center;font-weight:500}
-.btn-new-folder:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.folder-item-new{color:var(--sub);opacity:.55}.folder-item-new:hover{opacity:1;color:var(--sub);background:var(--accent-soft)}.folder-item-new .folder-icon{background:transparent;border:1px dashed var(--border);color:var(--sub)}.folder-item-new:hover .folder-icon{border-color:var(--accent);color:var(--accent)}
 .sidebar-settings{margin:6px 8px 10px;padding:0;background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;transition:all .25s}
 .sidebar-settings.collapsed .settings-body{display:none}
 .sidebar-settings.collapsed .settings-arrow{transform:rotate(-90deg)}

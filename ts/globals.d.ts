@@ -5,8 +5,8 @@ declare var pywebview: {
     api: {
         loadState(): Promise<string>;
         saveState(convsJson: string, foldersJson: string, currentId: string): Promise<void>;
-        hasApiKey(): Promise<boolean>;
-        setApiKey(key: string): Promise<boolean>;
+        hasApiKey(): Promise<string>;
+        setApiKey(key: string): Promise<string>;
         getSidebarWidth(): Promise<number>;
         setSidebarWidth(w: number): Promise<void>;
         getTheme(): Promise<string>;
@@ -72,6 +72,8 @@ interface AlpineStore {
     ctxFolderId: string | null;
     defaultPromptId: string | null;
     defaultPromptName: string | null;
+    globalTokens: number;
+    online: boolean;
     presetIcons: string[];
     readonly current: ConvData | undefined;
     readonly pinnedConversations: ConvData[];
@@ -149,6 +151,9 @@ interface ConvData {
     promptId?: string | null;
     promptName?: string | null;
     updatedAt?: number;
+    promptTokens?: number;
+    completionTokens?: number;
+    totalTokens?: number;
 }
 
 interface MessageData {

@@ -2,8 +2,11 @@
 DeepSeek Chat 桌面应用 —— 使用 pywebview + KaTeX + marked.js
 """
 
+import os
 import sys
 import webview
+
+_STATIC = os.path.join(os.path.dirname(__file__), 'static')
 
 from config import WIN_WIDTH, WIN_HEIGHT, WIN_MIN_W, WIN_MIN_H, APP_VERSION, load_window_geometry, save_window_geometry
 from ui.bridge import Bridge
@@ -21,9 +24,15 @@ def run():
 
     bridge = Bridge()
     geo = load_window_geometry()
+
+    # 写入 HTML 到 static 目录以支持 vendor/ 相对路径
+    html_path = os.path.join(_STATIC, 'index_generated.html')
+    with open(html_path, 'w', encoding='utf-8') as _f:
+        _f.write(PAGE.replace("{VERSION}", APP_VERSION))
+
     window = webview.create_window(
         "DeepSeek Chat",
-        html=PAGE.replace("{VERSION}", APP_VERSION),
+        url='file:///' + html_path.replace('\\', '/'),
         js_api=bridge,
         width=geo.get("w", WIN_WIDTH),
         height=geo.get("h", WIN_HEIGHT),

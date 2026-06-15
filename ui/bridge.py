@@ -20,21 +20,27 @@ class Bridge:
         self.win = WindowService()
 
     # ── API Key ─────────────────────────────────────────────
-    def hasApiKey(self) -> bool:
+    def hasApiKey(self) -> str:
+        """返回 JSON: {"ok": bool, "error": str|null}"""
+        import json
         key = self.storage.get_api_key()
         if not key:
-            return False
-        return self.api.verify_key(key)
+            return json.dumps({"ok": False, "error": None})
+        ok, err = self.api.verify_key(key)
+        return json.dumps({"ok": ok, "error": err})
 
-    def setApiKey(self, key: str) -> bool:
+    def setApiKey(self, key: str) -> str:
+        """返回 JSON: {"ok": bool, "error": str|null}"""
+        import json
         key = key.strip()
         if not key or not key.startswith("sk-"):
-            return False
-        if not self.api.verify_key(key):
-            return False
+            return json.dumps({"ok": False, "error": None})
+        ok, err = self.api.verify_key(key)
+        if not ok:
+            return json.dumps({"ok": False, "error": err})
         self.storage.set_api_key(key)
         print("[Bridge] API Key verified and saved")
-        return True
+        return json.dumps({"ok": True, "error": None})
 
     # ── 侧栏宽度 / 主题 / 设置 ──────────────────────────────
     def getSidebarWidth(self) -> int:
@@ -138,9 +144,9 @@ class Bridge:
             }, ensure_ascii=False)
             self._eval_js(f"window._onStreamChunk({chunk})")
 
-        def _on_done(ok, error):
+        def _on_done(ok, error, usage=None):
             result = json.dumps(
-                {"type": "done", "ok": ok, "error": error},
+                {"type": "done", "ok": ok, "error": error, "usage": usage},
                 ensure_ascii=False,
             )
             self._eval_js(f"window._onStreamDone({result})")

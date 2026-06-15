@@ -58,6 +58,12 @@ document.addEventListener('alpine:init', () => {
     defaultPromptId: null as string | null,
     defaultPromptName: null as string | null,
 
+    // Token 统计
+    globalTokens: 0,
+
+    // 联网状态（由 API 调用结果更新）
+    online: true,
+
     presetIcons: ['📁','💼','🏠','🎓','💡','🚀','🎮','🎵','📚','❤️','🌟','🔥','🌈','🍕','🐱','💰','⚡','🎯','🌍','📝'],
 
     // ═══════════════════════════════════════════════
@@ -138,6 +144,9 @@ document.addEventListener('alpine:init', () => {
         const sc = await pywebview!.api.loadSetting('settings_collapsed');
         if (sc) this.settingsCollapsed = sc === '1';
 
+        const gt = await pywebview!.api.loadSetting('global_tokens');
+        if (gt) this.globalTokens = parseInt(gt) || 0;
+
         const promptsRaw = await pywebview!.api.loadPrompts();
         if (promptsRaw) this.prompts = JSON.parse(promptsRaw);
 
@@ -161,8 +170,15 @@ document.addEventListener('alpine:init', () => {
           }
         }
 
-        const hasKey = await pywebview!.api.hasApiKey();
-        if (!hasKey) this.showApiKeyModal = true;
+        const hasKey = JSON.parse(await pywebview!.api.hasApiKey());
+        if (hasKey.error !== 'network') this.online = true;
+        if (!hasKey.ok) {
+          if (hasKey.error === 'network') {
+            this.online = false;
+          } else {
+            this.showApiKeyModal = true;
+          }
+        }
 
         this._restoreSettingsUI();
 
@@ -573,11 +589,13 @@ document.addEventListener('alpine:init', () => {
       this.apiKeyError = '';
       if (!this._apiReady()) return;
       try {
-        const ok = await pywebview!.api.setApiKey(key);
-        if (ok) {
+        const result = JSON.parse(await pywebview!.api.setApiKey(key));
+        if (result.ok) {
           this.showApiKeyModal = false;
+        } else if (result.error === 'network') {
+          this.apiKeyError = '网络连接失败，请检查网络后重试';
         } else {
-          this.apiKeyError = 'API Key 验证失败，请检查后重试';
+          this.apiKeyError = 'API Key 无效，请检查后重试';
         }
       } catch (e) {
         this.apiKeyError = '验证出错：' + e;
