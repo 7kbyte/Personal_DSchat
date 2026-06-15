@@ -108,16 +108,7 @@ ds/
 │   └── init.ts          # 窗口拖拽/缩放 + 键盘
 │
 ├── storage/
-│   └── history.py       # 对话 + 收藏夹持久化（JSON，原子写入）
-│
-└── assets/              # 静态资源
-```
-│           └── main.js          # 事件绑定入口
-│
-├── storage/
-│   └── history.py       # 对话 + 收藏夹持久化（JSON，原子写入）
-│
-└── assets/              # 静态资源
+|   └── history.py       # 对话 + 收藏夹持久化（JSON，原子写入）
 ```
 
 ## ⚙️ 配置说明
