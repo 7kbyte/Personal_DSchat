@@ -43,12 +43,14 @@ cd ds
 
 # 2. 创建虚拟环境
 python -m venv venv
-
-# 3. 激活虚拟环境
 venv\Scripts\activate
 
-# 4. 安装依赖
+# 3. 安装依赖
 pip install -r requirements.txt
+npm install
+
+# 4. 编译 TypeScript
+npm run build
 
 # 5. 运行
 python main.py
@@ -59,7 +61,8 @@ python main.py
 ## 📦 打包为 EXE
 
 ```bash
-build.bat
+npm run build    # 先编译 TypeScript
+build.bat        # PyInstaller 打包
 ```
 
 打包完成后 EXE 位于 `dist\DeepSeekChat.exe`。
@@ -70,34 +73,45 @@ build.bat
 ds/
 ├── main.py              # 入口文件
 ├── config.py            # 全局配置（API、模型、窗口、存储路径）
-├── requirements.txt     # 依赖列表
+├── requirements.txt     # Python 依赖
+├── package.json         # Node.js 依赖（TypeScript）
+├── tsconfig.json        # TypeScript 编译配置
 ├── build.bat            # PyInstaller 打包脚本
-├── DeepSeekChat.spec    # PyInstaller 配置
 │
 ├── api/
 │   └── deepseek.py      # DeepSeek API 流式调用 + Key 验证
 │
+├── services/            # 服务层
+│   ├── storage_service.py  # 持久化读写
+│   ├── api_service.py      # API 流式调用
+│   └── window_service.py   # 无边框窗口控制
+│
 ├── ui/
 │   ├── web_ui.py        # WebView 窗口创建（无边框、DPI 感知）
-│   ├── bridge.py        # Python ↔ JS 桥接（API、历史、窗口控制、剪贴板）
-│   ├── page.py          # 页面组装（HTML 模板 + CSS + JS 模块注入）
+│   ├── bridge.py        # Python ↔ JS 桥接（轻量转发层）
+│   ├── page.py          # 页面组装（HTML 模板 + CSS + JS 注入）
 │   └── static/          # 前端资源
-│       ├── index.html   # HTML 模板
-│       ├── themes.css   # 10 套主题 CSS 变量 + UI 样式 + 几何装饰
-│       └── js/          # JS 模块（13 个）
-│           ├── state.js         # 全局状态
-│           ├── utils.js         # 工具函数
-│           ├── markdown.js      # Markdown + KaTeX 渲染
-│           ├── messages.js      # 消息渲染 + 代码复制
-│           ├── conversations.js # 对话管理
-│           ├── stream.js        # 流式消息 + 提示词注入
-│           ├── folders.js       # 收藏夹渲染
-│           ├── drag.js          # 拖拽排序
-│           ├── context-menu.js  # 右键菜单
-│           ├── modals.js        # 模态对话框
-│           ├── settings.js      # 设置面板 + 主题切换
-│           ├── prompts.js       # 提示词 CRUD
-│           ├── init.js          # 初始化 + 窗口拖拽/缩放
+│       ├── index-alpine.html  # Alpine.js HTML 模板
+│       ├── css/                # 组件化 CSS（14 个文件）
+│       │   ├── base/           # 变量、reset、滚动条
+│       │   ├── components/     # 侧栏、消息、模态框等
+│       │   └── layout/         # 布局、装饰
+│       └── js/                 # 编译后的 JS（由 ts/ 生成）
+│
+├── ts/                  # TypeScript 源码
+│   ├── globals.d.ts     # 全局类型声明
+│   ├── alpine-store.ts  # Alpine.js 全局 Store
+│   ├── markdown.ts      # Markdown + KaTeX 渲染
+│   ├── messages.ts      # 消息渲染 + 代码复制
+│   ├── stream.ts        # 流式传输 + 发送
+│   ├── drag.ts          # 拖拽排序 + 侧栏宽度
+│   └── init.ts          # 窗口拖拽/缩放 + 键盘
+│
+├── storage/
+│   └── history.py       # 对话 + 收藏夹持久化（JSON，原子写入）
+│
+└── assets/              # 静态资源
+```
 │           └── main.js          # 事件绑定入口
 │
 ├── storage/
@@ -133,6 +147,8 @@ ds/
 | 技术 | 用途 |
 |------|------|
 | [pywebview](https://pywebview.flowrl.com/) | 桌面 WebView 容器（WebView2） |
+| [Alpine.js](https://alpinejs.dev/) | 响应式 UI 框架（15 KB） |
+| [TypeScript](https://www.typescriptlang.org/) | 类型安全前端开发 |
 | [KaTeX](https://katex.org/) | LaTeX 数学公式渲染 |
 | [marked.js](https://marked.js.org/) | Markdown → HTML 转换 |
 | [PyInstaller](https://pyinstaller.org/) | 打包为独立 EXE |

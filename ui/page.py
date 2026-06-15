@@ -5,7 +5,7 @@ _STATIC = os.path.join(os.path.dirname(__file__), 'static')
 _JS_DIR = os.path.join(_STATIC, 'js')
 _CSS_DIR = os.path.join(_STATIC, 'css')
 
-with open(os.path.join(_STATIC, 'index-alpine.html'), 'r', encoding='utf-8') as _f:
+with open(os.path.join(_STATIC, 'index.html'), 'r', encoding='utf-8') as _f:
     _html = _f.read()
 
 # CSS 加载顺序（按 css/files.txt）

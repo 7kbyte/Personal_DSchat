@@ -5,6 +5,15 @@ echo   DeepSeek Chat - 打包为 EXE
 echo ========================================
 echo.
 
+REM 编译 TypeScript
+echo [0/4] 编译 TypeScript...
+call npm run build
+if %ERRORLEVEL% NEQ 0 (
+    echo TypeScript 编译失败！
+    pause
+    exit /b 1
+)
+
 REM 安装依赖
 echo [1/4] 安装依赖...
 pip install pyinstaller pywebview pillow -q

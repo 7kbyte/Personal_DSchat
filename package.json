@@ -1,0 +1,25 @@
+{
+  "name": "ds",
+  "version": "1.0.0",
+  "description": "一个基于 [DeepSeek API](https://platform.deepseek.com/) 的现代化桌面聊天应用，使用 pywebview + KaTeX + marked.js 实现与官网一致的 Markdown 与 LaTeX 渲染效果。无边框窗口、毛玻璃侧栏、几何矢量背景、10 套主题配色，打造媲美原生应用的桌面体验。",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/7kbyte/Personal_DSchat.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/7kbyte/Personal_DSchat/issues"
+  },
+  "homepage": "https://github.com/7kbyte/Personal_DSchat#readme",
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}
