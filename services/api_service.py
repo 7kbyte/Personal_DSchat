@@ -1,7 +1,7 @@
 """
-API service — DeepSeek API 流式调用与 Key 验证
+API service — DeepSeek API 流式调用与 Key 验证 (httpx async)
 """
-import json
+import asyncio
 import threading
 
 from api.deepseek import chat_stream, verify_api_key
@@ -18,26 +18,26 @@ class ApiService:
 
     # ── Key 验证 ────────────────────────────────────────────
     def verify_key(self, key: str):
-        """返回 (ok: bool, error: str|None) — 'network' 或 'auth'"""
-        return verify_api_key(key)
+        """返回 (ok: bool, error: str|None)"""
+        return asyncio.run(verify_api_key(key))
 
     def has_valid_key(self):
         """返回 (ok: bool, error: str|None)"""
         key = load_api_key()
         if not key:
             return False, None
-        return verify_api_key(key)
+        return asyncio.run(verify_api_key(key))
 
     # ── 流式聊天 ────────────────────────────────────────────
     def send_message(self, params: dict, on_chunk, on_done):
-        """异步发起流式请求。on_chunk(content, reasoning), on_done(ok, error)"""
+        """异步发起流式请求。on_chunk(content, reasoning), on_done(ok, error, usage)"""
         with self._lock:
             if self._loading:
                 return False
             self._loading = True
             self._stop_flag = False
 
-        def _run():
+        async def _run():
             final_usage = None
             try:
                 msgs = params["messages"]
@@ -47,7 +47,7 @@ class ApiService:
                 print(f"[API] call: model={model}, thinking={thinking}, "
                       f"effort={effort}, msgs={len(msgs)}")
 
-                for delta_content, delta_reasoning, usage in chat_stream(
+                async for delta_content, delta_reasoning, usage in chat_stream(
                         msgs, model, thinking, effort):
                     with self._lock:
                         if self._stop_flag:
@@ -68,7 +68,7 @@ class ApiService:
                 with self._lock:
                     self._loading = False
 
-        threading.Thread(target=_run, daemon=True).start()
+        threading.Thread(target=lambda: asyncio.run(_run()), daemon=True).start()
         return True
 
     def stop(self):
@@ -78,5 +78,7 @@ class ApiService:
 
     @property
     def is_loading(self) -> bool:
+        with self._lock:
+            return self._loading
         with self._lock:
             return self._loading
