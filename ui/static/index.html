@@ -16,7 +16,7 @@
 {{CSS}}
 </style>
 </head>
-<body x-data @click="$store.app.hideAllMenus()" @keydown.escape="$store.app.closeDrawer(); $store.app.hideAllMenus()">
+<body x-data @click="$store.app.hideAllMenus()" @keydown.escape="$store.app.closeDrawer(); $store.app.closePromptModal(); $store.app.hideAllMenus()">
 
 <!-- ========== 窗口缩放拖拽手柄 ========== -->
 <div class="resize-handles" aria-hidden="true">
@@ -144,7 +144,7 @@
         <div class="settings-divider"></div>
         <div class="settings-label">提示词</div>
         <div class="prompt-row">
-            <span class="prompt-current" @click="$store.app.openPromptModal()" x-text="$store.app.defaultPromptName || '未设置'"></span>
+            <span class="prompt-current" @click="$store.app.openPromptModal()" x-text="$store.app.defaultPromptName || '无提示词'"></span>
             <button class="prompt-btn" @click="$store.app.openPromptModal()">✏️</button>
         </div>
         </div>
@@ -193,7 +193,7 @@
         <span class="dot" :class="{ 'dot-offline': !$store.app.online }" :title="$store.app.online ? '已联网' : '离线'"></span>
         <span x-text="$store.app.statusText"></span>
         <span class="status-prompt" @click="$store.app.viewCurrentPrompt()" title="点击查看提示词"
-            x-text="$store.app.currentPromptName" x-show="$store.app.currentPromptName !== '未设置'"></span>
+            x-text="$store.app.currentPromptName" x-show="$store.app.currentPromptName !== '无提示词'"></span>
         <span class="status-meta" x-text="$store.app.fmtRelative($store.app.current?.updatedAt)"></span>
         <span class="status-meta" x-show="$store.app.current?.totalTokens" style="margin-left:4px" x-text="'🪙 ' + ($store.app.current?.totalTokens || 0).toLocaleString()"></span>
         <div class="win-controls">
@@ -318,46 +318,107 @@
 </div>
 
 <!-- 提示词管理 -->
-<div class="modal-overlay" x-show="$store.app.showPromptModal" @click.self="$store.app.closePromptModal()">
-    <div class="modal" style="max-width:560px">
+<template x-if="$store.app.showPromptModal">
+<div class="modal-overlay" @click.self="$store.app.closePromptModal()">
+    <div class="modal prompt-modal">
         <button class="modal-close" @click="$store.app.closePromptModal()">✕</button>
-        <h3>💬 提示词管理</h3>
-        <!-- 列表 -->
-        <div x-show="$store.app.promptListOpen" style="max-height:260px;overflow-y:auto;margin:8px 0">
-            <div class="prompt-item" :class="{ active: !$store.app.defaultPromptId }"
-                @click="$store.app.selectPrompt(null)">
-                <div class="prompt-name">🚫 无提示词</div>
-            </div>
-            <template x-for="p in $store.app.prompts" :key="p.id">
-                <div class="prompt-item" :class="{ active: $store.app.defaultPromptId === p.id }">
-                    <div style="flex:1" @click="$store.app.selectPrompt(p.id)">
-                        <div class="prompt-name" x-text="p.name"></div>
-                        <div style="font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" x-text="p.content"></div>
+        <div class="prompt-modal-header">
+            <h3>💬 提示词管理</h3>
+            <span class="prompt-modal-subtitle" x-text="`共 ${$store.app.prompts.length} 条提示词`"></span>
+        </div>
+        <div class="prompt-panels">
+            <!-- 左侧：列表面板 -->
+            <div class="prompt-list-panel">
+                <div class="prompt-search-wrap">
+                    <svg class="prompt-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input type="text" class="prompt-search-input" placeholder="     搜索提示词..." x-model="$store.app.promptSearch">
+                </div>
+                <div class="prompt-list-scroll">
+                    <!-- 无提示词 -->
+                    <div class="prompt-card" :class="{ active: !$store.app.defaultPromptId }"
+                        @click="$store.app.selectPrompt(null)">
+                        <div class="prompt-card-icon">🚫</div>
+                        <div class="prompt-card-body">
+                            <div class="prompt-card-name">无提示词</div>
+                            <div class="prompt-card-desc">不使用系统提示词</div>
+                        </div>
+                        <div class="prompt-card-check" x-show="!$store.app.defaultPromptId">✓</div>
                     </div>
-                    <div class="prompt-actions">
-                        <button class="prompt-act" @click.stop="$store.app.startEditPrompt(p.id)" title="编辑">✏️</button>
-                        <button class="prompt-act del" @click.stop="$store.app.deletePrompt(p.id)" title="删除">🗑</button>
+                    <!-- 提示词列表 -->
+                    <template x-for="p in $store.app.filteredPrompts" :key="p.id">
+                        <div class="prompt-card" :class="{ active: $store.app.defaultPromptId === p.id, editing: $store.app.promptEditId === p.id }"
+                            @click="$store.app.selectPrompt(p.id)">
+                            <div class="prompt-card-icon">📝</div>
+                            <div class="prompt-card-body">
+                                <div class="prompt-card-name" x-text="p.name"></div>
+                                <div class="prompt-card-desc" x-text="p.content.substring(0, 80) + (p.content.length > 80 ? '…' : '')"></div>
+                            </div>
+                            <div class="prompt-card-check" x-show="$store.app.defaultPromptId === p.id">✓</div>
+                            <div class="prompt-card-actions">
+                                <button class="prompt-card-act" @click.stop="$store.app.startEditPrompt(p.id)" title="编辑">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                                <button class="prompt-card-act del" @click.stop="$store.app.deletePrompt(p.id)" title="删除">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    <!-- 空状态 -->
+                    <div class="prompt-empty" x-show="$store.app.filteredPrompts.length === 0 && $store.app.promptSearch">
+                        <div class="prompt-empty-icon">🔍</div>
+                        <div>没有匹配的提示词</div>
                     </div>
                 </div>
-            </template>
-        </div>
-        <button class="prompt-add-btn" @click="$store.app.startAddPrompt()" x-show="$store.app.promptListOpen">＋ 新建提示词</button>
-        <!-- 编辑器 -->
-        <div x-show="$store.app.promptEditorOpen">
-            <input type="text" placeholder="提示词名称" maxlength="30" x-model="$store.app.promptEditName"
-                style="width:100%;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;outline:none">
-            <textarea placeholder="输入提示词内容..." rows="8" x-model="$store.app.promptEditContent"
-                style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);resize:vertical;font-family:inherit;font-size:13px;line-height:1.7;outline:none;min-height:160px"></textarea>
-            <div class="btns" style="margin-top:10px">
-                <button @click="$store.app.cancelEditPrompt()">取消</button>
-                <button style="background:var(--accent);color:var(--on-accent);border-color:var(--accent)" @click="$store.app.savePrompt()">保存</button>
+                <button class="prompt-add-btn" @click="$store.app.startAddPrompt()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>新建提示词</span>
+                </button>
+            </div>
+
+            <!-- 右侧：编辑/详情面板 -->
+            <div class="prompt-editor-panel">
+                <!-- 未编辑时的占位 -->
+                <div class="prompt-editor-empty" x-show="!$store.app.promptEditing">
+                    <div class="prompt-editor-empty-icon">📋</div>
+                    <div class="prompt-editor-empty-title">选择一个提示词</div>
+                    <div class="prompt-editor-empty-desc">从左侧列表选择一个提示词设为默认，或点击「新建提示词」创建。</div>
+                    <div class="prompt-editor-empty-desc">设为默认的提示词将在新对话中自动生效。</div>
+                </div>
+                <!-- 编辑表单 -->
+                <div class="prompt-editor-form" x-show="$store.app.promptEditing">
+                    <div class="prompt-editor-field">
+                        <label class="prompt-editor-label">提示词名称</label>
+                        <input type="text" placeholder="给提示词起个名字…" maxlength="40" x-model="$store.app.promptEditName"
+                            class="prompt-editor-input">
+                    </div>
+                    <div class="prompt-editor-field">
+                        <label class="prompt-editor-label">
+                            提示词内容
+                            <span class="prompt-editor-count" x-text="($store.app.promptEditContent || '').length + ' 字符'"></span>
+                        </label>
+                        <textarea placeholder="输入系统提示词内容，用于设定 AI 的角色、语气、行为规则等…" x-model="$store.app.promptEditContent"
+                            class="prompt-editor-textarea" rows="12"></textarea>
+                    </div>
+                    <div class="prompt-editor-hint">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span>提示词将作为系统消息在对话中生效，不会显示在聊天界面中。</span>
+                    </div>
+                    <div class="prompt-editor-actions">
+                        <button class="prompt-editor-btn cancel" @click="$store.app.cancelEditPrompt()">取消</button>
+                        <button class="prompt-editor-btn save" @click="$store.app.savePrompt()"
+                            :disabled="!$store.app.promptEditName.trim() || !$store.app.promptEditContent.trim()">保存</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+</template>
 
 <!-- 查看提示词 -->
-<div class="modal-overlay" x-show="$store.app.showViewPromptModal" @click.self="$store.app.closeViewPrompt()">
+<template x-if="$store.app.showViewPromptModal">
+<div class="modal-overlay" @click.self="$store.app.closeViewPrompt()">
     <div class="modal" style="max-width:520px">
         <button class="modal-close" @click="$store.app.closeViewPrompt()">✕</button>
         <h3>💬 当前提示词</h3>
@@ -365,6 +426,7 @@
             x-text="$store.app.viewPromptContent"></pre>
     </div>
 </div>
+</template>
 
 <script>
 // Bridge-ready guard

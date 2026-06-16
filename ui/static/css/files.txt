@@ -2,7 +2,6 @@ base/variables.css
 base/reset.css
 components/sidebar.css
 components/drawer.css
-components/prompt.css
 layout/chat.css
 components/messages.css
 components/input-area.css
@@ -10,5 +9,6 @@ components/empty.css
 components/context-menu.css
 components/modal.css
 components/icon-picker.css
+components/prompt.css
 base/scrollbar.css
 layout/decor.css

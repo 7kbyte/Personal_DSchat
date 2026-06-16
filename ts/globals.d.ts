@@ -57,8 +57,8 @@ interface AlpineStore {
     apiKeyInput: string;
     apiKeyError: string;
     showPromptModal: boolean;
-    promptListOpen: boolean;
-    promptEditorOpen: boolean;
+    promptSearch: string;
+    promptEditing: boolean;
     promptEditId: string | null;
     promptEditName: string;
     promptEditContent: string;
@@ -82,6 +82,7 @@ interface AlpineStore {
     readonly visibleMessages: MessageData[];
     readonly hasMessages: boolean;
     readonly currentPromptName: string;
+    readonly filteredPrompts: PromptData[];
     readonly statusText: string;
     init(): Promise<void>;
     newConv(): void;

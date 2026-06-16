@@ -38,8 +38,8 @@ document.addEventListener('alpine:init', () => {
     apiKeyError: '',
 
     showPromptModal: false,
-    promptListOpen: true,
-    promptEditorOpen: false,
+    promptSearch: '',
+    promptEditing: false,
     promptEditId: null as string | null,
     promptEditName: '',
     promptEditContent: '',
@@ -102,10 +102,18 @@ document.addEventListener('alpine:init', () => {
 
     get currentPromptName(): string {
       const conv = this.current;
-      if (!conv || !conv.promptId) return '未设置';
+      if (!conv || !conv.promptId) return '无提示词';
       if (conv.promptName) return conv.promptName;
       const p = this.prompts.find((p: PromptData) => p.id === conv.promptId);
-      return p ? p.name : '未设置';
+      return p ? p.name : '无提示词';
+    },
+
+    get filteredPrompts(): PromptData[] {
+      const q = (this.promptSearch || '').toLowerCase();
+      if (!q) return this.prompts;
+      return this.prompts.filter((p: PromptData) =>
+        p.name.toLowerCase().includes(q) || p.content.toLowerCase().includes(q)
+      );
     },
 
     get statusText(): string {
@@ -182,7 +190,9 @@ document.addEventListener('alpine:init', () => {
 
         this._restoreSettingsUI();
 
-        if (typeof renderMessages === 'function') renderMessages();
+        if (typeof renderMessages === 'function') {
+          requestAnimationFrame(() => renderMessages());
+        }
       } catch (e) {
         console.error('[Alpine] init:', e);
       }
@@ -192,12 +202,15 @@ document.addEventListener('alpine:init', () => {
     },
 
     _restoreSettingsUI(): void {
-      document.querySelectorAll('#modelSeg .seg-btn').forEach(b => {
-        b.classList.toggle('active', (b as HTMLElement).dataset.val === this.model);
-      });
-      document.querySelectorAll('#effortSeg .seg-btn').forEach(b => {
-        b.classList.toggle('active', (b as HTMLElement).dataset.val === this.effort);
-      });
+      // 分段控件现在由 Alpine :class 绑定驱动，此方法仅作兼容保留
+      const modelBtns = document.querySelectorAll('#modelSeg .seg-btn');
+      if (modelBtns.length > 0) {
+        modelBtns.forEach(b => { b.classList.toggle('active', (b as HTMLElement).dataset.val === this.model); });
+      }
+      const effortBtns = document.querySelectorAll('#effortSeg .seg-btn');
+      if (effortBtns.length > 0) {
+        effortBtns.forEach(b => { b.classList.toggle('active', (b as HTMLElement).dataset.val === this.effort); });
+      }
       const thinkToggle = document.getElementById('thinkToggle') as HTMLInputElement | null;
       if (thinkToggle) thinkToggle.checked = this.thinking;
     },
@@ -349,14 +362,18 @@ document.addEventListener('alpine:init', () => {
     // ═══════════════════════════════════════════════
 
     openPromptModal(): void {
-      this.promptListOpen = true;
-      this.promptEditorOpen = false;
+      this.promptSearch = '';
+      this.promptEditing = false;
+      this.promptEditId = null;
+      this.promptEditName = '';
+      this.promptEditContent = '';
       this.showPromptModal = true;
     },
 
     closePromptModal(): void {
       this.showPromptModal = false;
-      this.promptEditorOpen = false;
+      this.promptEditing = false;
+      this.promptSearch = '';
     },
 
     selectPrompt(id: string | null): void {
@@ -379,8 +396,7 @@ document.addEventListener('alpine:init', () => {
       this.promptEditId = null;
       this.promptEditName = '';
       this.promptEditContent = '';
-      this.promptEditorOpen = true;
-      this.promptListOpen = false;
+      this.promptEditing = true;
     },
 
     startEditPrompt(id: string): void {
@@ -389,13 +405,14 @@ document.addEventListener('alpine:init', () => {
       this.promptEditId = id;
       this.promptEditName = p.name;
       this.promptEditContent = p.content;
-      this.promptEditorOpen = true;
-      this.promptListOpen = false;
+      this.promptEditing = true;
     },
 
     cancelEditPrompt(): void {
-      this.promptEditorOpen = false;
-      this.promptListOpen = true;
+      this.promptEditing = false;
+      this.promptEditId = null;
+      this.promptEditName = '';
+      this.promptEditContent = '';
     },
 
     savePrompt(): void {
@@ -409,18 +426,31 @@ document.addEventListener('alpine:init', () => {
         const id = 'p_' + Date.now().toString(36);
         this.prompts.push({ id, name, content });
       }
-      this.promptEditorOpen = false;
-      this.promptListOpen = true;
+      this.promptEditing = false;
+      this.promptEditId = null;
+      this.promptEditName = '';
+      this.promptEditContent = '';
       this._savePrompts();
     },
 
     deletePrompt(id: string): void {
-      const idx = this.prompts.findIndex((p: PromptData) => p.id === id);
-      if (idx < 0) return;
-      this.prompts.splice(idx, 1);
-      this.conversations.forEach((c: ConvData) => { if (c.promptId === id) c.promptId = null; });
-      this._savePrompts();
-      this._save();
+      const p = this.prompts.find((p: PromptData) => p.id === id);
+      if (!p) return;
+      this.confirmTitle = '删除提示词';
+      const usageCount = this.conversations.filter((c: ConvData) => c.promptId === id).length;
+      let msg = '确定删除 "' + p.name + '" 吗？';
+      if (usageCount > 0) msg += '\n有 ' + usageCount + ' 个对话正在使用此提示词，删除后将恢复为无提示词。';
+      this.confirmMsg = msg;
+      this.confirmAction = () => {
+        const idx = this.prompts.findIndex((pr: PromptData) => pr.id === id);
+        if (idx < 0) return;
+        this.prompts.splice(idx, 1);
+        this.conversations.forEach((c: ConvData) => { if (c.promptId === id) { c.promptId = null; c.promptName = null; } });
+        if (this.defaultPromptId === id) { this.defaultPromptId = null; this.defaultPromptName = null; }
+        this._savePrompts();
+        this._save();
+      };
+      this.showConfirmModal = true;
     },
 
     _savePrompts(): void {

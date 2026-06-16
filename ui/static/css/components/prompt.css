@@ -1,1 +1,101 @@
-.prompt-row{display:flex;align-items:center;gap:6px;padding:4px 10px 6px}.prompt-current{flex:1;font-size:11px;color:var(--sub);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 8px;border-radius:6px;background:var(--surface-secondary);transition:all .15s}.prompt-current:hover{color:var(--accent);background:var(--accent-soft)}.prompt-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;color:var(--sub)}.prompt-btn:hover{background:var(--accent-soft);color:var(--accent)}.prompt-add-btn{width:100%;padding:7px;border:1px dashed var(--border);border-radius:8px;background:transparent;color:var(--sub);cursor:pointer;font-size:12px;transition:all .15s}.prompt-add-btn:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}.prompt-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .15s;margin-bottom:4px;background:var(--surface-secondary)}.prompt-item:hover{background:var(--accent-soft)}.prompt-item.active{background:var(--accent-soft);color:var(--accent);font-weight:600}.prompt-item .prompt-name{font-size:13px;font-weight:600;line-height:1.4}.prompt-item .prompt-actions{display:flex;gap:4px;flex-shrink:0}.prompt-item .prompt-act{width:24px;height:24px;border:none;background:transparent;cursor:pointer;font-size:12px;border-radius:5px;display:flex;align-items:center;justify-content:center;transition:all .1s;color:var(--sub)}.prompt-item .prompt-act:hover{background:var(--surface);color:var(--text)}.prompt-item .prompt-act.del:hover{color:var(--danger)}.status-prompt{color:var(--accent);font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px;transition:all .15s;display:inline-flex;align-items:center;gap:4px}.status-prompt:hover{background:var(--accent-soft)}.status-meta{color:var(--sub);font-size:11px;margin-left:auto;opacity:.7}.prompt-content-preview{font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}.main{flex:1;display:flex;flex-direction:column;min-width:0;transition:background .5s}
+/* ── 侧栏设置中的提示词行 ── */
+.prompt-row{display:flex;align-items:center;gap:6px;padding:4px 10px 6px}
+.prompt-current{flex:1;font-size:11px;color:var(--sub);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 8px;border-radius:6px;background:var(--surface-secondary);transition:all .15s}
+.prompt-current:hover{color:var(--accent);background:var(--accent-soft)}
+.prompt-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;color:var(--sub)}
+.prompt-btn:hover{background:var(--accent-soft);color:var(--accent)}
+
+/* ── 聊天头部状态标签 ── */
+.status-prompt{color:var(--accent);font-weight:600;cursor:pointer;padding:2px 8px;border-radius:6px;transition:all .15s;display:inline-flex;align-items:center;gap:4px}
+.status-prompt:hover{background:var(--accent-soft)}
+.status-meta{color:var(--sub);font-size:11px;margin-left:auto;opacity:.7}
+
+/* ═══════════════════════════════════════════════
+   提示词管理模态框 — 双栏布局
+   ═══════════════════════════════════════════════ */
+
+.prompt-modal{max-width:960px;width:92%;max-height:88vh;padding:0;display:flex;flex-direction:column;overflow:hidden}
+.prompt-modal-header{display:flex;align-items:baseline;gap:12px;padding:24px 32px 0;flex-shrink:0}
+.prompt-modal-header h3{margin-bottom:0;font-size:19px}
+.prompt-modal-subtitle{font-size:12px;color:var(--sub)}
+
+/* ── 双栏容器 ── */
+.prompt-panels{display:flex;flex:1;min-height:0;margin-top:16px;border-top:1px solid var(--border)}
+.prompt-list-panel{width:340px;min-width:260px;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--surface-secondary)}
+.prompt-editor-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── 搜索框 ── */
+.prompt-search-wrap{position:relative;padding:14px 14px 10px;flex-shrink:0}
+.prompt-search-icon{position:absolute;left:26px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--sub);pointer-events:none;display:block}
+.prompt-search-input{width:100%;padding:10px 14px 10px 38px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:13px;outline:none;transition:border-color .2s;box-sizing:border-box}
+.prompt-search-input:focus{border-color:var(--accent)}
+.prompt-search-input::placeholder{color:var(--sub)}
+
+/* ── 列表滚动区 ── */
+.prompt-list-scroll{flex:1;overflow-y:auto;padding:0 8px 8px}
+.prompt-list-scroll::-webkit-scrollbar{width:4px}
+.prompt-list-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* ── 提示词卡片 ── */
+.prompt-card{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:10px;cursor:pointer;transition:all .15s;position:relative;margin-bottom:3px}
+.prompt-card:hover{background:var(--accent-soft)}
+.prompt-card.active{background:var(--accent-soft);outline:1.5px solid var(--accent);outline-offset:-1px}
+.prompt-card.editing{background:var(--accent-soft)}
+.prompt-card-icon{font-size:18px;flex-shrink:0;width:26px;text-align:center;line-height:1.3}
+.prompt-card-body{flex:1;min-width:0}
+.prompt-card-name{font-size:14px;font-weight:600;line-height:1.4;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prompt-card-desc{font-size:12px;color:var(--sub);margin-top:3px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prompt-card.active .prompt-card-name{color:var(--accent)}
+.prompt-card-check{width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.prompt-card-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .15s;position:absolute;right:8px;top:8px;background:var(--surface);border-radius:6px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.prompt-card:hover .prompt-card-actions{opacity:1}
+.prompt-card-act{width:28px;height:28px;border:none;background:transparent;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .12s;color:var(--sub)}
+.prompt-card-act:hover{background:var(--accent-soft);color:var(--accent)}
+.prompt-card-act.del:hover{background:rgba(211,47,47,.1);color:var(--danger)}
+
+/* ── 空搜索结果 ── */
+.prompt-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:var(--sub);font-size:13px;gap:8px}
+.prompt-empty-icon{font-size:32px;opacity:.5}
+
+/* ── 新建按钮（列表底部） ── */
+.prompt-list-panel .prompt-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 16px);margin:0 8px 8px;padding:10px;border:1px dashed var(--border);border-radius:10px;background:transparent;color:var(--sub);cursor:pointer;font-size:13px;transition:all .15s;flex-shrink:0}
+.prompt-list-panel .prompt-add-btn:hover{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.prompt-list-panel .prompt-add-btn svg{flex-shrink:0}
+
+/* ── 右侧面板：占位状态 ── */
+.prompt-editor-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;gap:6px}
+.prompt-editor-empty-icon{font-size:48px;opacity:.4;margin-bottom:8px}
+.prompt-editor-empty-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px}
+.prompt-editor-empty-desc{font-size:12px;color:var(--sub);line-height:1.6;max-width:280px}
+
+/* ── 右侧面板：编辑表单 ── */
+.prompt-editor-form{flex:1;display:flex;flex-direction:column;padding:20px 24px;overflow-y:auto;gap:16px}
+.prompt-editor-field{display:flex;flex-direction:column;gap:6px}
+.prompt-editor-label{font-size:12px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between}
+.prompt-editor-count{font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--sub)}
+.prompt-editor-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;outline:none;transition:border-color .2s;box-sizing:border-box}
+.prompt-editor-input:focus{border-color:var(--accent)}
+.prompt-editor-input::placeholder{color:var(--sub)}
+.prompt-editor-textarea{width:100%;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:13px;line-height:1.7;font-family:inherit;resize:vertical;outline:none;min-height:240px;transition:border-color .2s;box-sizing:border-box}
+.prompt-editor-textarea:focus{border-color:var(--accent)}
+.prompt-editor-textarea::placeholder{color:var(--sub)}
+.prompt-editor-hint{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;border-radius:10px;background:var(--accent-soft);color:var(--sub);font-size:12px;line-height:1.5}
+.prompt-editor-hint svg{flex-shrink:0;margin-top:1px;opacity:.6}
+.prompt-editor-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:4px}
+.prompt-editor-btn{padding:10px 24px;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.prompt-editor-btn.cancel{background:var(--surface);color:var(--text)}
+.prompt-editor-btn.cancel:hover{background:var(--surface-secondary)}
+.prompt-editor-btn.save{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.prompt-editor-btn.save:hover{opacity:.88;transform:translateY(-1px)}
+.prompt-editor-btn.save:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ── 响应式：窄屏时上下堆叠 ── */
+@media (max-width:700px){
+  .prompt-panels{flex-direction:column}
+  .prompt-list-panel{width:100%;max-height:220px;min-width:0;border-right:none;border-bottom:1px solid var(--border)}
+  .prompt-editor-panel{min-height:320px}
+  .prompt-modal{max-width:96vw;max-height:96vh}
+}
+
+/* ── 主区域布局（勿删） ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;transition:background .2s}
