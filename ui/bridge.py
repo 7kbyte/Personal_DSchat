@@ -136,17 +136,20 @@ class Bridge:
             print(f"[Bridge] sendMessage parse error: {e}")
             return
 
+        conv_id = data.get("convId", "")
+
         def _on_chunk(content, reasoning):
             chunk = json.dumps({
                 "type": "chunk",
                 "content": content,
                 "reasoning_content": reasoning,
+                "convId": conv_id,
             }, ensure_ascii=False)
             self._eval_js(f"window._onStreamChunk({chunk})")
 
         def _on_done(ok, error, usage=None):
             result = json.dumps(
-                {"type": "done", "ok": ok, "error": error, "usage": usage},
+                {"type": "done", "ok": ok, "error": error, "usage": usage, "convId": conv_id},
                 ensure_ascii=False,
             )
             self._eval_js(f"window._onStreamDone({result})")

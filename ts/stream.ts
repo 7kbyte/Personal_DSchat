@@ -44,26 +44,27 @@ async function send(): Promise<void> {
     model: app.model,
     thinking: app.thinking,
     reasoning_effort: app.effort,
+    convId: conv.id,
   }));
 }
 
-(window as any)._onStreamChunk = function (data: { content?: string; reasoning_content?: string }): void {
+(window as any)._onStreamChunk = function (data: { content?: string; reasoning_content?: string; convId?: string }): void {
   const app = Alpine.store('app');
-  const conv = app.current;
+  const conv = data.convId ? app.conversations.find((c: ConvData) => c.id === data.convId) : app.current;
   if (!conv) return;
   const lastMsg = conv.messages[conv.messages.length - 1];
   if (!lastMsg || lastMsg.role !== 'assistant') return;
   if (lastMsg.content === '思考中...') { lastMsg.content = ''; lastMsg.reasoning_content = ''; }
   if (data.content) lastMsg.content += data.content;
   if (data.reasoning_content) lastMsg.reasoning_content = (lastMsg.reasoning_content || '') + data.reasoning_content;
-  updateLastMessage();
+  updateLastMessage(conv);
 };
 
-(window as any)._onStreamDone = function (data: { ok: boolean; error?: string; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number } }): void {
+(window as any)._onStreamDone = function (data: { ok: boolean; error?: string; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number }; convId?: string }): void {
   const app = Alpine.store('app');
   app.loading = false;
   setLoading(false);
-  const conv = app.current;
+  const conv = data.convId ? app.conversations.find((c: ConvData) => c.id === data.convId) : app.current;
   if (!conv) return;
   app.online = data.ok;
   if (!data.ok) {
@@ -109,13 +110,17 @@ function regenerate(): void {
     model: app.model,
     thinking: app.thinking,
     reasoning_effort: app.effort,
+    convId: conv.id,
   }));
 }
 
-function updateLastMessage(): void {
+function updateLastMessage(conv?: ConvData): void {
   const container = document.getElementById('messages');
-  const conv = Alpine.store('app').current;
+  if (!conv) conv = Alpine.store('app').current;
   if (!conv || !conv.messages || conv.messages.length === 0) return;
+  // 如果正在更新的对话不是当前显示的对话，跳过 DOM 更新（数据已在 conv.messages 中正确累积）
+  const app = Alpine.store('app');
+  if (conv.id !== app.currentId) return;
   const lastMsg = conv.messages[conv.messages.length - 1];
   const lastEl = container?.querySelector('.msg:last-child .bubble') as HTMLElement | null;
   if (!lastEl) { renderMessages(); return; }
