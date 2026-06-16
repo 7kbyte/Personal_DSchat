@@ -9,6 +9,8 @@ import sys
 DEEPSEEK_API_KEY = ""
 DEEPSEEK_API_URL  = "https://api.deepseek.com/chat/completions"
 
+
+
 MODEL_OPTIONS = {
     "DeepSeek-V4 Pro":   "deepseek-v4-pro",
     "DeepSeek-V4 Flash": "deepseek-v4-flash",
