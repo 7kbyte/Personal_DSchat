@@ -16,6 +16,8 @@ declare var pywebview: {
         saveSettings(json: string): Promise<void>;
         loadPrompts(): Promise<string>;
         savePrompts(json: string): Promise<void>;
+        loadTokens(): Promise<string>;
+        saveTokens(json: string): Promise<void>;
         getWindowRect(): Promise<string>;
         moveWindow(x: number, y: number): Promise<void>;
         resizeWindow(x: number, y: number, w: number, h: number): Promise<void>;
@@ -26,6 +28,7 @@ declare var pywebview: {
         sendMessage(paramsJson: string): Promise<void>;
         stopGeneration(): Promise<void>;
         copyToClipboard(text: string): Promise<void>;
+        openExternalLink(url: string): Promise<void>;
     };
 } | undefined;
 
@@ -73,6 +76,9 @@ interface AlpineStore {
     defaultPromptId: string | null;
     defaultPromptName: string | null;
     globalTokens: number;
+    globalCacheHitTokens: number;
+    globalCacheMissTokens: number;
+    globalCompletionTokens: number;
     online: boolean;
     presetIcons: string[];
     readonly current: ConvData | undefined;
@@ -155,6 +161,8 @@ interface ConvData {
     promptTokens?: number;
     completionTokens?: number;
     totalTokens?: number;
+    cacheHitTokens?: number;
+    cacheMissTokens?: number;
 }
 
 interface MessageData {

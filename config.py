@@ -2,6 +2,7 @@
 全局配置 —— API Key、模型、窗口尺寸、存储路径
 """
 
+import json
 import os
 import sys
 
@@ -81,6 +82,39 @@ def save_api_key(key: str):
     os.makedirs(d, exist_ok=True)
     with open(get_key_path(), "w", encoding="utf-8") as f:
         f.write(DEEPSEEK_API_KEY)
+
+def get_tokens_path() -> str:
+    return os.path.join(get_app_dir(), "tokens.json")
+
+
+def load_tokens() -> dict:
+    """读取全局 Token 用量。返回 {"total":0, "cache_hit":0, "cache_miss":0, "completion":0}"""
+    path = get_tokens_path()
+    defaults = {"total": 0, "cache_hit": 0, "cache_miss": 0, "completion": 0}
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for k in defaults:
+                    defaults[k] = int(data.get(k, 0))
+    except Exception:
+        pass
+    return defaults
+
+
+def save_tokens(data: dict):
+    """保存全局 Token 用量（原子写入）"""
+    d = get_app_dir()
+    os.makedirs(d, exist_ok=True)
+    path = get_tokens_path()
+    tmp = path + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except Exception:
+        pass
+
 
 # ==================== .conf 配置文件读写 ====================
 CONFIG_FILENAME = "config.conf"

@@ -60,6 +60,9 @@ document.addEventListener('alpine:init', () => {
 
     // Token 统计
     globalTokens: 0,
+    globalCacheHitTokens: 0,
+    globalCacheMissTokens: 0,
+    globalCompletionTokens: 0,
 
     // 联网状态（由 API 调用结果更新）
     online: true,
@@ -154,6 +157,15 @@ document.addEventListener('alpine:init', () => {
 
         const gt = await pywebview!.api.loadSetting('global_tokens');
         if (gt) this.globalTokens = parseInt(gt) || 0;
+        const tokensRaw = await pywebview!.api.loadTokens();
+        if (tokensRaw) {
+          try {
+            const t = JSON.parse(tokensRaw);
+            this.globalCacheHitTokens = t.cache_hit || 0;
+            this.globalCacheMissTokens = t.cache_miss || 0;
+            this.globalCompletionTokens = t.completion || 0;
+          } catch(e) {}
+        }
 
         const promptsRaw = await pywebview!.api.loadPrompts();
         if (promptsRaw) this.prompts = JSON.parse(promptsRaw);
@@ -198,6 +210,9 @@ document.addEventListener('alpine:init', () => {
       }
 
       setupWindowDrag();
+      if (typeof setupLinkInterceptor === 'function') {
+        setupLinkInterceptor();
+      }
       window.pywebviewReady = true;
     },
 

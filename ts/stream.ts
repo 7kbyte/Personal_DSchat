@@ -60,7 +60,7 @@ async function send(): Promise<void> {
   updateLastMessage(conv);
 };
 
-(window as any)._onStreamDone = function (data: { ok: boolean; error?: string; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number }; convId?: string }): void {
+(window as any)._onStreamDone = function (data: { ok: boolean; error?: string; usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number; prompt_cache_hit_tokens?: number; prompt_cache_miss_tokens?: number }; convId?: string }): void {
   const app = Alpine.store('app');
   app.loading = false;
   setLoading(false);
@@ -73,16 +73,29 @@ async function send(): Promise<void> {
   } else {
     const lastMsg2 = conv.messages[conv.messages.length - 1];
     if (lastMsg2 && lastMsg2.role === 'assistant') lastMsg2.timestamp = Date.now();
-    // 累加对话 token 用量
+    // 累加对话 token 用量（含缓存命中/未命中细分）
     if (data.usage) {
       conv.promptTokens = (conv.promptTokens || 0) + data.usage.prompt_tokens;
       conv.completionTokens = (conv.completionTokens || 0) + data.usage.completion_tokens;
       conv.totalTokens = (conv.totalTokens || 0) + data.usage.total_tokens;
-      // 累加全局用量
+      conv.cacheHitTokens = (conv.cacheHitTokens || 0) + (data.usage.prompt_cache_hit_tokens || 0);
+      conv.cacheMissTokens = (conv.cacheMissTokens || 0) + (data.usage.prompt_cache_miss_tokens || 0);
+      // 累加全局用量（四项）
       app.globalTokens = (app.globalTokens || 0) + data.usage.total_tokens;
+      app.globalCacheHitTokens = (app.globalCacheHitTokens || 0) + (data.usage.prompt_cache_hit_tokens || 0);
+      app.globalCacheMissTokens = (app.globalCacheMissTokens || 0) + (data.usage.prompt_cache_miss_tokens || 0);
+      app.globalCompletionTokens = (app.globalCompletionTokens || 0) + data.usage.completion_tokens;
       // 持久化全局 token
       if (app._apiReady()) {
         try { pywebview!.api.saveSetting('global_tokens', String(app.globalTokens)); } catch (e) {}
+        try {
+          pywebview!.api.saveTokens(JSON.stringify({
+            total: app.globalTokens,
+            cache_hit: app.globalCacheHitTokens,
+            cache_miss: app.globalCacheMissTokens,
+            completion: app.globalCompletionTokens,
+          }));
+        } catch (e) {}
       }
     }
   }

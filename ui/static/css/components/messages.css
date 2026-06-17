@@ -35,6 +35,11 @@
 .bubble th,.bubble td{border:1px solid var(--border);padding:6px 10px;text-align:left;font-size:13px}
 .bubble th{background:var(--surface-secondary);font-weight:600}
 .bubble img{max-width:100%;border-radius:6px}
+.bubble a{color:var(--accent);text-decoration:none;border-bottom:1.5px dashed var(--accent);transition:all .2s;word-break:break-all}
+.bubble a:hover{color:var(--accent-hover);border-bottom-style:solid;border-bottom-color:var(--accent-hover)}
+.bubble a[href^="http"]::after{content:' ↗';font-size:.78em;opacity:.55;white-space:nowrap}
+.bubble pre a{border-bottom:none}
+.bubble pre a::after{content:none}
 .katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0;max-width:100%}
 .reasoning-toggle{cursor:pointer;color:var(--accent);font-size:12px;font-weight:600;user-select:none;padding:4px 0;display:inline-flex;align-items:center;gap:4px}
 .reasoning-content{margin-top:6px;padding:10px 14px;background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;font-size:12px;color:var(--sub);line-height:1.6;display:none;max-height:300px;overflow-y:auto;user-select:text}

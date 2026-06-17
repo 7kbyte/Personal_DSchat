@@ -149,7 +149,15 @@
         </div>
         </div>
     </div>
-    <div class="sidebar-footer">{VERSION} · Tokens: <span x-text="$store.app.globalTokens.toLocaleString()"></span></div>
+    <div class="sidebar-footer">{VERSION} · <span class="global-token" title="用量统计">
+        🪙 <span x-text="$store.app.globalTokens.toLocaleString()"></span>
+        <span class="token-tooltip">
+            <span class="token-row">⚡ 缓存命中 <b x-text="$store.app.globalCacheHitTokens.toLocaleString()"></b></span>
+            <span class="token-row">📥 未命中 <b x-text="$store.app.globalCacheMissTokens.toLocaleString()"></b></span>
+            <span class="token-divider"></span>
+            <span class="token-row">📤 输出 <b x-text="$store.app.globalCompletionTokens.toLocaleString()"></b></span>
+        </span>
+    </span></div>
     <div class="sidebar-resize-handle" id="resizeHandle"></div>
 </div>
 

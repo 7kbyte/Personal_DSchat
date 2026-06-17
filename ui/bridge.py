@@ -79,6 +79,17 @@ class Bridge:
         except Exception:
             pass
 
+    # ── Token 用量 ──────────────────────────────────────────
+    def loadTokens(self) -> str:
+        return json.dumps(self.storage.get_tokens())
+
+    def saveTokens(self, tokens_json: str):
+        try:
+            data = json.loads(tokens_json)
+            self.storage.put_tokens(data)
+        except Exception:
+            pass
+
     # ── 窗口几何保存 ────────────────────────────────────────
     def saveWindowSize(self, w: int, h: int):
         try:
@@ -113,6 +124,12 @@ class Bridge:
     # ── 剪贴板 ──────────────────────────────────────────────
     def copyToClipboard(self, text: str):
         WindowService.copy_to_clipboard(text)
+
+    # ── 外部链接 ────────────────────────────────────────────
+    def openExternalLink(self, url: str):
+        """在系统默认浏览器中打开链接"""
+        import webbrowser
+        webbrowser.open(url)
 
     # ── 对话状态 ────────────────────────────────────────────
     def loadState(self) -> str:

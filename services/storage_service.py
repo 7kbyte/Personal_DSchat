@@ -11,6 +11,7 @@ from config import (
     load_theme, save_theme,
     load_setting, save_setting, save_settings,
     save_window_geometry,
+    load_tokens, save_tokens,
 )
 from storage.history import load as load_history, save as save_history
 
@@ -66,6 +67,13 @@ class StorageService:
 
     def put_prompts(self, prompts: list) -> None:
         save_prompts(prompts)
+
+    # ── Token 用量 ──────────────────────────────────────────
+    def get_tokens(self) -> dict:
+        return load_tokens()
+
+    def put_tokens(self, data: dict) -> None:
+        save_tokens(data)
 
     # ── 窗口几何 ────────────────────────────────────────────
     def save_window_rect(self, x: int, y: int, w: int, h: int) -> None:

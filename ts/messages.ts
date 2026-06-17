@@ -79,3 +79,22 @@ async function stopGeneration(): Promise<void> {
   if (typeof pywebview !== 'undefined' && pywebview!.api)
     pywebview!.api.stopGeneration();
 }
+
+// 拦截所有消息区域内的链接点击，在系统默认浏览器中打开
+function setupLinkInterceptor(): void {
+  const container = document.getElementById('messages');
+  if (!container) return;
+  container.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const anchor = target.closest('a');
+    if (!anchor) return;
+    const href = anchor.getAttribute('href');
+    if (!href) return;
+    // 只拦截外部链接 (http/https)，保留页面内锚点跳转
+    if (href.startsWith('http://') || href.startsWith('https://')) {
+      e.preventDefault();
+      if (typeof pywebview !== 'undefined' && pywebview!.api)
+        pywebview!.api.openExternalLink(href);
+    }
+  });
+}

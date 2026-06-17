@@ -57,5 +57,12 @@
 .theme-dot:hover{transform:scale(1.15);box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .theme-dot.active{border-color:var(--text);box-shadow:0 0 0 2px var(--surface),0 1px 4px rgba(0,0,0,.2)}
 .sidebar-footer{padding:10px 14px;font-size:10px;color:var(--sub);text-align:center;border-top:1px solid var(--border);opacity:.55;letter-spacing:.2px;background:linear-gradient(to top,var(--surface),transparent)}
+/* 全局 Token 用量提示 (hover 向上弹出详细分类) */
+.global-token{position:relative;cursor:default;opacity:1}
+.global-token .token-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 10px;font-size:11px;line-height:1.7;white-space:nowrap;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.15);pointer-events:none}
+.global-token:hover .token-tooltip{display:block}
+.token-tooltip .token-row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.token-tooltip .token-row b{color:var(--text);font-variant-numeric:tabular-nums}
+.token-tooltip .token-divider{height:1px;background:var(--border);margin:2px 0;opacity:.5}
 .sidebar-resize-handle{position:absolute;right:-3px;top:0;bottom:0;width:6px;cursor:col-resize;z-index:20;background:transparent;transition:background .2s}
 .sidebar-resize-handle:hover,.sidebar-resize-handle.active{background:var(--accent);opacity:.35}
