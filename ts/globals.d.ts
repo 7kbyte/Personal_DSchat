@@ -60,6 +60,7 @@ interface AlpineStore {
     apiKeyInput: string;
     apiKeyError: string;
     showPromptModal: boolean;
+    promptMenuOpen: boolean;
     promptSearch: string;
     promptEditing: boolean;
     promptEditId: string | null;
@@ -112,6 +113,10 @@ interface AlpineStore {
     deletePrompt(id: string): void;
     viewCurrentPrompt(): void;
     closeViewPrompt(): void;
+    togglePromptMenu(e?: MouseEvent): void;
+    currentPromptClick(e?: MouseEvent): void;
+    switchConvPrompt(promptId: string | null): void;
+    openPromptManager(): void;
     setTheme(t: string): void;
     pickModel(val: string): void;
     toggleThinking(): void;

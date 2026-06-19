@@ -38,6 +38,7 @@ document.addEventListener('alpine:init', () => {
     apiKeyError: '',
 
     showPromptModal: false,
+    promptMenuOpen: false,
     promptSearch: '',
     promptEditing: false,
     promptEditId: null as string | null,
@@ -486,6 +487,43 @@ document.addEventListener('alpine:init', () => {
       this.showViewPromptModal = false;
     },
 
+    togglePromptMenu(e?: MouseEvent): void {
+      if (e) e.stopPropagation();
+      this.promptMenuOpen = !this.promptMenuOpen;
+    },
+
+    currentPromptClick(e?: MouseEvent): void {
+      if (e) e.stopPropagation();
+      const conv = this.current;
+      // 已有消息且有提示词 → 锁定态，点击查看提示词内容
+      if (conv && conv.messages && conv.messages.length > 0 && conv.promptId) {
+        this.viewCurrentPrompt();
+        return;
+      }
+      // 新对话或无提示词 → 正常下拉选择
+      this.togglePromptMenu(e);
+    },
+
+    switchConvPrompt(promptId: string | null): void {
+      const conv = this.current;
+      if (!conv) return;
+      if (promptId) {
+        const p = this.prompts.find((p: PromptData) => p.id === promptId);
+        conv.promptId = promptId;
+        conv.promptName = p ? p.name : null;
+      } else {
+        conv.promptId = null;
+        conv.promptName = null;
+      }
+      this._save();
+      this.promptMenuOpen = false;
+    },
+
+    openPromptManager(): void {
+      this.promptMenuOpen = false;
+      this.openPromptModal();
+    },
+
     // ═══════════════════════════════════════════════
     // 主题 / 设置
     // ═══════════════════════════════════════════════
@@ -617,6 +655,7 @@ document.addEventListener('alpine:init', () => {
     hideAllMenus(): void {
       document.querySelectorAll('.context-menu').forEach(m => ((m as HTMLElement).style.display = 'none'));
       this.ctxMenu = null;
+      this.promptMenuOpen = false;
     },
 
     // ═══════════════════════════════════════════════
