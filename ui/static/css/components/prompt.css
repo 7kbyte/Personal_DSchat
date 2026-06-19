@@ -11,10 +11,8 @@
 .prompt-select-arrow svg{display:block}
 
 /* ── 下拉菜单 ── */
-.prompt-select-menu{position:absolute;top:calc(100% + 8px);left:-4px;min-width:210px;max-width:300px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);z-index:100;overflow:hidden;animation:promptMenuIn .18s ease;display:flex;flex-direction:column}
-@supports (backdrop-filter:blur(12px)){.prompt-select-menu{background:rgba(255,255,255,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
-  body[data-theme=dark] .prompt-select-menu{background:rgba(30,30,32,.88)}
-}
+.prompt-select-menu{position:absolute;top:calc(100% + 8px);left:-4px;min-width:210px;max-width:300px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.15),0 2px 8px rgba(0,0,0,.08);z-index:100;overflow:hidden;animation:promptMenuIn .18s ease;display:flex;flex-direction:column}
+@supports (backdrop-filter:blur(12px)){.prompt-select-menu{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}}
 @keyframes promptMenuIn{from{opacity:0;transform:translateY(-6px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .menu-scroll{max-height:260px;overflow-y:auto;padding:6px}
 .menu-scroll::-webkit-scrollbar{width:3px}

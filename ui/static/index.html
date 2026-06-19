@@ -195,14 +195,14 @@
         <span class="dot" :class="{ 'dot-offline': !$store.app.online }" :title="$store.app.online ? '已联网' : '离线'"></span>
         <span class="header-model" x-text="$store.app.statusText"></span>
         <span class="header-sep">│</span>
-        <div class="prompt-select-wrap" :class="{ locked: $store.app.hasMessages && $store.app.current?.promptId }" @click.outside="$store.app.promptMenuOpen = false">
+        <div class="prompt-select-wrap" :class="{ locked: $store.app.hasMessages }" @click.outside="$store.app.promptMenuOpen = false">
             <span class="status-prompt" @click="$store.app.currentPromptClick($event)"
-                :title="$store.app.hasMessages && $store.app.current?.promptId ? '点击查看提示词内容' : '点击切换提示词'">
-                <span class="status-prompt-icon" x-show="$store.app.hasMessages && $store.app.current?.promptId">🔒</span>
-                <span class="status-prompt-icon" x-show="!($store.app.hasMessages && $store.app.current?.promptId)">💬</span>
+                :title="$store.app.hasMessages ? '点击查看提示词内容' : '点击切换提示词'">
+                <span class="status-prompt-icon" x-show="$store.app.hasMessages">🔒</span>
+                <span class="status-prompt-icon" x-show="!$store.app.hasMessages">💬</span>
                 <span x-text="$store.app.currentPromptName"></span>
             </span>
-            <span class="prompt-select-arrow" :class="{ open: $store.app.promptMenuOpen }" x-show="!($store.app.hasMessages && $store.app.current?.promptId)">
+            <span class="prompt-select-arrow" :class="{ open: $store.app.promptMenuOpen }" x-show="!$store.app.hasMessages">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
             </span>
             <div class="prompt-select-menu" x-show="$store.app.promptMenuOpen" @click.outside="$store.app.promptMenuOpen = false">

@@ -495,12 +495,12 @@ document.addEventListener('alpine:init', () => {
     currentPromptClick(e?: MouseEvent): void {
       if (e) e.stopPropagation();
       const conv = this.current;
-      // 已有消息且有提示词 → 锁定态，点击查看提示词内容
-      if (conv && conv.messages && conv.messages.length > 0 && conv.promptId) {
+      // 已有消息 → 锁定态，点击查看提示词内容
+      if (conv && conv.messages && conv.messages.length > 0) {
         this.viewCurrentPrompt();
         return;
       }
-      // 新对话或无提示词 → 正常下拉选择
+      // 新对话 → 正常下拉选择
       this.togglePromptMenu(e);
     },
 
