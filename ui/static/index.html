@@ -230,6 +230,9 @@
                 </div>
             </div>
         </div>
+        <button class="header-btn-delete" @click="$store.app.deleteConversation($store.app.currentId)" title="删除当前对话" x-show="$store.app.hasMessages">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </button>
         <span class="header-tokens" x-show="$store.app.current?.totalTokens" x-text="'🪙' + $store.app.current?.totalTokens.toLocaleString()"></span>
         <div class="win-controls">
             <button class="win-btn win-min" @click="pywebview.api.minimizeWindow()" title="最小化">
@@ -241,6 +244,26 @@
             <button class="win-btn win-close" @click="pywebview.api.closeWindow()" title="关闭">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
+        </div>
+    </div>
+
+    <!-- ========== 搜索栏 ========== -->
+    <div class="search-bar" x-show="$store.app.searchOpen" x-transition.opacity.duration.150ms @keydown.escape="$store.app.closeSearch()">
+        <div class="search-input-wrap">
+            <svg class="search-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" class="search-input" placeholder="搜索消息…" x-model="$store.app.searchQuery"
+                @input="$store.app.doSearch($event.target.value)"
+                @keydown.enter="$store.app.searchNext()"
+                @keydown.escape.prevent="$store.app.closeSearch()">
+            <div class="search-nav-group" x-show="$store.app.searchCount > 0">
+                <button class="search-nav-btn" @click="$store.app.searchPrev()" title="上一个 (Shift+Enter)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                </button>
+                <span class="search-count" x-text="($store.app.searchIndex + 1) + '/' + $store.app.searchCount"></span>
+                <button class="search-nav-btn" @click="$store.app.searchNext()" title="下一个 (Enter)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -273,6 +296,7 @@
 <div class="context-menu" id="msgCtxMenu" x-ref="msgCtxMenu" @click.outside="$store.app.hideAllMenus()">
     <div class="item" @click="$store.app.copyMessageText($store.app.ctxMsgIdx); $store.app.hideAllMenus()">📋 复制此消息</div>
     <div class="item" @click="$store.app.copyAllText(); $store.app.hideAllMenus()">📋 复制全部对话</div>
+    <div class="item" @click="$store.app.openSearch(); $store.app.hideAllMenus()">🔍 搜索对话</div>
     <div style="height:1px;background:var(--border);margin:2px 8px"></div>
     <div class="item" id="rollbackItem" @click="$store.app.rollbackTo($store.app.ctxMsgIdx); $store.app.hideAllMenus()">↩ 回退到此处</div>
 </div>

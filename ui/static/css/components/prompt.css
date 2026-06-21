@@ -119,4 +119,4 @@
 }
 
 /* ── 主区域布局（勿删） ── */
-.main{flex:1;display:flex;flex-direction:column;min-width:0;transition:background .2s}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;transition:background .2s;position:relative}

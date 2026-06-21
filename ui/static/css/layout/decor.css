@@ -4,4 +4,9 @@
 .win-btn svg{display:block;opacity:.7;transition:opacity .15s}
 .win-btn:hover svg{opacity:1}
 .win-close:hover{background:var(--danger);color:#fff}
-.win-close:hover svg{opacity:1}.resize-handles{position:fixed;inset:0;pointer-events:none;z-index:999}.rh{position:fixed;pointer-events:auto;z-index:999}.rh-top{top:0;left:0;right:0;height:4px;cursor:n-resize}.rh-bottom{bottom:0;left:0;right:0;height:4px;cursor:s-resize}.rh-left{top:0;left:0;bottom:0;width:4px;cursor:w-resize}.rh-right{top:0;right:0;bottom:0;width:4px;cursor:e-resize}.rh-tl{top:0;left:0;width:10px;height:10px;cursor:nw-resize}.rh-tr{top:0;right:0;width:10px;height:10px;cursor:ne-resize}.rh-bl{bottom:0;left:0;width:10px;height:10px;cursor:sw-resize}.rh-br{bottom:0;right:0;width:10px;height:10px;cursor:se-resize}
+.win-close:hover svg{opacity:1}
+/* 删除当前对话 */
+.header-btn-delete{width:36px;height:30px;border:none;background:transparent;color:var(--sub);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;flex-shrink:0}
+.header-btn-delete:hover{background:var(--danger);color:#fff}
+.header-btn-delete svg{display:block;opacity:.7;transition:opacity .15s}
+.header-btn-delete:hover svg{opacity:1}.resize-handles{position:fixed;inset:0;pointer-events:none;z-index:999}.rh{position:fixed;pointer-events:auto;z-index:999}.rh-top{top:0;left:0;right:0;height:4px;cursor:n-resize}.rh-bottom{bottom:0;left:0;right:0;height:4px;cursor:s-resize}.rh-left{top:0;left:0;bottom:0;width:4px;cursor:w-resize}.rh-right{top:0;right:0;bottom:0;width:4px;cursor:e-resize}.rh-tl{top:0;left:0;width:10px;height:10px;cursor:nw-resize}.rh-tr{top:0;right:0;width:10px;height:10px;cursor:ne-resize}.rh-bl{bottom:0;left:0;width:10px;height:10px;cursor:sw-resize}.rh-br{bottom:0;right:0;width:10px;height:10px;cursor:se-resize}

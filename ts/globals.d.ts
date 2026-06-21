@@ -61,6 +61,11 @@ interface AlpineStore {
     apiKeyError: string;
     showPromptModal: boolean;
     promptMenuOpen: boolean;
+    searchOpen: boolean;
+    searchQuery: string;
+    searchResults: { msgIdx: number; text: string }[];
+    searchIndex: number;
+    searchCount: number;
     promptSearch: string;
     promptEditing: boolean;
     promptEditId: string | null;
@@ -117,6 +122,11 @@ interface AlpineStore {
     currentPromptClick(e?: MouseEvent): void;
     switchConvPrompt(promptId: string | null): void;
     openPromptManager(): void;
+    openSearch(): void;
+    closeSearch(): void;
+    doSearch(q: string): void;
+    searchPrev(): void;
+    searchNext(): void;
     setTheme(t: string): void;
     pickModel(val: string): void;
     toggleThinking(): void;

@@ -28,7 +28,9 @@ function renderMessages(): void {
     if (!isUser && i === visible.length - 1 && !app.loading) {
       actionsHtml = '<div class="msg-actions"><button class="regenerate-btn" onclick="regenerate()" title="重新生成">🔄</button></div>';
     }
-    html += '<div class="msg ' + m.role + '" oncontextmenu="Alpine.store(\'app\').onMsgCtx(event,' + i + ')">'
+    // Find the original index in conv.messages (not visible)
+    const origIdx = conv.messages!.indexOf(m);
+    html += '<div class="msg ' + m.role + '" data-msg-idx="' + origIdx + '" oncontextmenu="Alpine.store(\'app\').onMsgCtx(event,' + i + ')">'
       + '<div class="msg-side"><div class="avatar">' + avatar + '</div><div class="msg-time">' + fmtTimeGlobal(m.timestamp as number) + '</div></div>'
       + '<div class="bubble">' + reasoningHtml + contentHtml + '</div>'
       + actionsHtml

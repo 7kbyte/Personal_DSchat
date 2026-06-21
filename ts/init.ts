@@ -103,6 +103,35 @@ function autoResize(e?: Event): void {
   if (ta) { ta.style.height = 'auto'; ta.style.height = Math.min((ta as HTMLTextAreaElement).scrollHeight, 140) + 'px'; }
 }
 
+// 全局键盘快捷键
+document.addEventListener('keydown', (e: KeyboardEvent) => {
+  const app = window.Alpine && Alpine.store('app');
+  if (!app) return;
+
+  // Ctrl+F: 打开搜索
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+    if (tag === 'textarea' || tag === 'input') return;
+    e.preventDefault();
+    if (app.searchOpen) {
+      const input = document.querySelector('.search-input') as HTMLInputElement;
+      if (input) { input.focus(); input.select(); }
+    } else {
+      app.openSearch();
+      setTimeout(() => {
+        const input = document.querySelector('.search-input') as HTMLInputElement;
+        if (input) input.focus();
+      }, 100);
+    }
+  }
+
+  // Escape: 关闭搜索
+  if (e.key === 'Escape' && app.searchOpen) {
+    e.preventDefault();
+    app.closeSearch();
+  }
+});
+
 // 启动 Alpine 初始化
 document.addEventListener('alpine:initialized', () => {
   ($store as any).app.init();

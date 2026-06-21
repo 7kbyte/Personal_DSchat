@@ -40,6 +40,14 @@ document.addEventListener('alpine:init', () => {
     showPromptModal: false,
     promptMenuOpen: false,
     promptSearch: '',
+
+    // 消息搜索
+    searchOpen: false,
+    searchQuery: '',
+    searchResults: [] as { msgIdx: number; text: string }[],
+    searchIndex: -1,
+    searchCount: 0,
+
     promptEditing: false,
     promptEditId: null as string | null,
     promptEditName: '',
@@ -522,6 +530,150 @@ document.addEventListener('alpine:init', () => {
     openPromptManager(): void {
       this.promptMenuOpen = false;
       this.openPromptModal();
+    },
+
+    // ═══════════════════════════════════════════════
+    // 消息搜索
+    // ═══════════════════════════════════════════════
+
+    openSearch(): void {
+      this.searchOpen = true;
+      this.searchQuery = '';
+      this.searchResults = [];
+      this.searchIndex = -1;
+      this.searchCount = 0;
+      this._clearHighlights();
+    },
+
+    closeSearch(): void {
+      this.searchOpen = false;
+      this.searchQuery = '';
+      this.searchResults = [];
+      this.searchIndex = -1;
+      this.searchCount = 0;
+      const wrap = document.querySelector('.search-input-wrap');
+      if (wrap) wrap.classList.remove('no-results');
+      this._clearHighlights();
+    },
+
+    doSearch(q: string): void {
+      this.searchQuery = q;
+      this.searchResults = [];
+      this.searchIndex = -1;
+      this.searchCount = 0;
+      this._clearHighlights();
+      if (!q.trim()) return;
+
+      // 直接在 DOM 文本节点中搜索，像浏览器 Ctrl+F 一样
+      const container = document.getElementById('messages');
+      if (!container) return;
+
+      const rangeQueue: Range[] = [];
+      this._findInDOM(container, q, rangeQueue);
+
+      this.searchCount = rangeQueue.length;
+      // 无结果视觉反馈
+      const wrap = document.querySelector('.search-input-wrap');
+      if (wrap) {
+        if (q.trim() && this.searchCount === 0) wrap.classList.add('no-results');
+        else wrap.classList.remove('no-results');
+      }
+      if (this.searchCount > 0) {
+        this.searchIndex = 0;
+        this._applyHighlights(rangeQueue);
+        this._scrollToCurrent();
+      }
+    },
+
+    searchPrev(): void {
+      if (this.searchCount === 0) return;
+      this.searchIndex = (this.searchIndex - 1 + this.searchCount) % this.searchCount;
+      this._applyHighlightsFromDOM();
+      this._scrollToCurrent();
+    },
+
+    searchNext(): void {
+      if (this.searchCount === 0) return;
+      this.searchIndex = (this.searchIndex + 1) % this.searchCount;
+      this._applyHighlightsFromDOM();
+      this._scrollToCurrent();
+    },
+
+    // 递归遍历 DOM，排除 <mark>、<script>、<style>、思考过程等
+    _findInDOM(root: Node, query: string, results: Range[]): void {
+      const lower = query.toLowerCase();
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => {
+          const parent = (node.parentNode as HTMLElement);
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('mark.search-hl, mark.search-hl-active, script, style, .reasoning-content, .reasoning-toggle, .win-controls, .search-bar, .chat-header, .msg-side, .msg-actions, .empty')) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+
+      let node: Text | null;
+      while ((node = walker.nextNode() as Text)) {
+        const text = node.textContent || '';
+        const textLower = text.toLowerCase();
+        let startIdx = 0;
+        let foundIdx: number;
+        while ((foundIdx = textLower.indexOf(lower, startIdx)) !== -1) {
+          const range = document.createRange();
+          range.setStart(node, foundIdx);
+          range.setEnd(node, foundIdx + query.length);
+          results.push(range);
+          startIdx = foundIdx + query.length;
+        }
+      }
+    },
+
+    _applyHighlights(results: Range[]): void {
+      for (let i = 0; i < results.length; i++) {
+        const r = results[i];
+        try {
+          const mark = document.createElement('mark');
+          mark.className = 'search-hl' + (i === this.searchIndex ? ' search-hl-active' : '');
+          // 安全地包裹：确保 range 仍然有效
+          if (r.startContainer === r.endContainer && r.startContainer.parentNode) {
+            r.surroundContents(mark);
+          }
+        } catch (_) { /* range may be invalid if DOM changed */ }
+      }
+    },
+
+    _applyHighlightsFromDOM(): void {
+      const container = document.getElementById('messages');
+      if (!container) return;
+      const allMarks = container.querySelectorAll('mark.search-hl, mark.search-hl-active');
+      allMarks.forEach((m, i) => {
+        if (i === this.searchIndex) {
+          m.classList.add('search-hl-active');
+        } else {
+          m.classList.remove('search-hl-active');
+        }
+      });
+    },
+
+    _scrollToCurrent(): void {
+      if (this.searchIndex < 0) return;
+      const container = document.getElementById('messages');
+      if (!container) return;
+      const active = container.querySelector('mark.search-hl-active');
+      if (active) {
+        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    },
+
+    _clearHighlights(): void {
+      const container = document.getElementById('messages');
+      if (!container) return;
+      container.querySelectorAll('mark.search-hl, mark.search-hl-active').forEach(m => {
+        const parent = m.parentNode;
+        if (parent) {
+          parent.replaceChild(document.createTextNode(m.textContent || ''), m);
+          (parent as HTMLElement).normalize();
+        }
+      });
     },
 
     // ═══════════════════════════════════════════════

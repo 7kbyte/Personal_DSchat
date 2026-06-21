@@ -10,5 +10,6 @@ components/context-menu.css
 components/modal.css
 components/icon-picker.css
 components/prompt.css
+components/search.css
 base/scrollbar.css
 layout/decor.css
