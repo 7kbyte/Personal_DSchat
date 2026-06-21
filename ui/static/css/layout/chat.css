@@ -1,4 +1,10 @@
-.chat-header{padding:8px 20px;display:flex;align-items:center;gap:10px;background:var(--surface);transition:background .5s;user-select:none;position:relative}
+.chat-header{padding:8px 20px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.35);transition:background .5s;user-select:none;position:relative;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+@supports not (backdrop-filter:blur(8px)){.chat-header{background:var(--surface)}}
+body[data-theme=dark] .chat-header,
+body[data-theme=ocean] .chat-header,
+body[data-theme=forest] .chat-header,
+body[data-theme=bloom] .chat-header,
+body[data-theme=cosmos] .chat-header{background:rgba(0,0,0,.35)}
 .chat-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:.5px;background:linear-gradient(to right,transparent,var(--border) 20%,var(--border) 80%,transparent)}
 
 /* inline 在线状态灯 */
