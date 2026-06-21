@@ -577,8 +577,9 @@ document.addEventListener('alpine:init', () => {
     },
 
     switchConvPrompt(promptId: string | null): void {
-      const conv = this.current;
-      if (!conv) return;
+      const convIdx = this.conversations.findIndex((c: ConvData) => c.id === this.currentId);
+      if (convIdx < 0) return;
+      const conv = this.conversations[convIdx];
       if (promptId) {
         const p = this.prompts.find((p: PromptData) => p.id === promptId);
         conv.promptId = promptId;
@@ -587,6 +588,8 @@ document.addEventListener('alpine:init', () => {
         conv.promptId = null;
         conv.promptName = null;
       }
+      // Alpine 无法检测嵌套属性变化，需要替换整个数组项来触发反应式更新
+      this.conversations.splice(convIdx, 1, { ...conv, messages: [...(conv.messages || [])] });
       this._save();
       this.promptMenuOpen = false;
     },

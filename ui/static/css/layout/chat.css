@@ -1,4 +1,4 @@
-.chat-header{padding:8px 20px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.35);transition:background .5s;user-select:none;position:relative;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.chat-header{padding:8px 20px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.35);transition:background .5s;user-select:none;position:relative;z-index:10;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 @supports not (backdrop-filter:blur(8px)){.chat-header{background:var(--surface)}}
 body[data-theme=dark] .chat-header,
 body[data-theme=ocean] .chat-header,
