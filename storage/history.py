@@ -10,8 +10,12 @@ from config import get_history_path, DEFAULT_FOLDER_NAME, DEFAULT_FOLDER_ID
 
 
 def save(conversations: list, folders: list, current_id: str):
-    """保存对话列表和文件夹列表（跳过空对话）"""
+    """保存对话列表和文件夹列表（保留当前对话，即使为空）"""
     non_empty = [c for c in conversations if c.get("messages")]
+    # 保留当前对话，即使没有消息（用户可能正停留在新对话界面）
+    current_conv = next((c for c in conversations if c.get("id") == current_id), None)
+    if current_conv and not current_conv.get("messages"):
+        non_empty.insert(0, current_conv)
     data = {
         "conversations": non_empty,
         "folders": folders,

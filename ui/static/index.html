@@ -273,24 +273,19 @@
             <div class="empty-greeting">
                 <span class="empty-greeting-emoji" x-text="$store.app.greeting.emoji"></span>
                 <h2 x-text="$store.app.greeting.text"></h2>
-                <p x-text="'今天是 ' + $store.app.greeting.date"></p>
             </div>
 
-            <div class="empty-stats">
-                <div class="empty-stat-card">
-                    <span class="empty-stat-icon">💬</span>
-                    <span class="empty-stat-num" x-text="$store.app.weeklyConversations"></span>
-                    <span class="empty-stat-label">本周对话</span>
-                </div>
-                <div class="empty-stat-card">
-                    <span class="empty-stat-icon">🪙</span>
-                    <span class="empty-stat-num" x-text="($store.app.weeklyTokens / 1000).toFixed(1) + 'K'"></span>
-                    <span class="empty-stat-label">本周消耗</span>
-                </div>
-                <div class="empty-stat-card">
-                    <span class="empty-stat-icon">🔥</span>
-                    <span class="empty-stat-num" x-text="$store.app.topPromptName"></span>
-                    <span class="empty-stat-label">常用提示词</span>
+            <!-- 电子时钟 -->
+            <div class="empty-clock" x-data="{ now: new Date() }" x-init="setInterval(() => now = new Date(), 1000)">
+                <div class="empty-clock-panel">
+                    <div class="empty-clock-time">
+                        <span x-text="String(now.getHours()).padStart(2,'0')"></span>
+                        <span class="empty-clock-colon">:</span>
+                        <span x-text="String(now.getMinutes()).padStart(2,'0')"></span>
+                        <span class="empty-clock-colon">:</span>
+                        <span x-text="String(now.getSeconds()).padStart(2,'0')"></span>
+                    </div>
+                    <div class="empty-clock-date" x-text="now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 ' + ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()]"></div>
                 </div>
             </div>
 

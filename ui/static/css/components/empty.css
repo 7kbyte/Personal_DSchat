@@ -9,16 +9,30 @@
 .empty-greeting h2{font-size:26px;color:var(--text);margin:0 0 4px;font-weight:700}
 .empty-greeting p{font-size:14px;color:var(--sub);margin:0}
 
-/* 统计卡片（主题自适应） */
-.empty-stats{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap;justify-content:center}
-.empty-stat-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid transparent;width:130px;transition:all .25s;cursor:default;box-sizing:border-box;position:relative;overflow:hidden}
-.empty-stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--accent),var(--accent-alt));opacity:0;transition:opacity .25s}
-.empty-stat-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
-.empty-stat-card:hover::before{opacity:.06}
-.empty-stat-card:hover .empty-stat-num{color:var(--accent)}
-.empty-stat-icon{font-size:22px;position:relative;z-index:1}
-.empty-stat-num{font-size:22px;font-weight:700;color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;z-index:1;transition:color .2s}
-.empty-stat-label{font-size:11px;color:var(--sub);position:relative;z-index:1}
+/* 电子时钟（七段数码管 + 亚克力面板） */
+.empty-clock{text-align:center;margin-bottom:32px}
+.empty-clock-panel{display:inline-flex;flex-direction:column;align-items:center;padding:32px 48px;border-radius:24px;background:rgba(0,0,0,.65);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 32px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.06)}
+body[data-theme=light] .empty-clock-panel,
+body[data-theme=sky] .empty-clock-panel,
+body[data-theme=leaf] .empty-clock-panel,
+body[data-theme=rose] .empty-clock-panel,
+body[data-theme=sunset] .empty-clock-panel{background:rgba(0,0,0,.5)}
+.empty-clock-time{font-size:72px;font-weight:400;letter-spacing:8px;font-variant-numeric:tabular-nums;font-family:'Consolas','Courier New',monospace;line-height:1;display:flex;align-items:center;gap:4px;color:var(--clock-glow);text-shadow:0 0 10px var(--clock-glow),0 0 40px var(--clock-glow-soft),0 0 80px var(--clock-glow-faint);user-select:none}
+
+/* ═══ 10 主题时钟配色 ═══ */
+:root,body[data-theme=light]{--clock-glow:#10b981;--clock-glow-soft:rgba(16,185,129,.35);--clock-glow-faint:rgba(16,185,129,.12)}
+body[data-theme=dark]{--clock-glow:#ef4444;--clock-glow-soft:rgba(239,68,68,.4);--clock-glow-faint:rgba(239,68,68,.14)}
+body[data-theme=sky]{--clock-glow:#38bdf8;--clock-glow-soft:rgba(56,189,248,.35);--clock-glow-faint:rgba(56,189,248,.12)}
+body[data-theme=ocean]{--clock-glow:#60a5fa;--clock-glow-soft:rgba(96,165,250,.35);--clock-glow-faint:rgba(96,165,250,.12)}
+body[data-theme=leaf]{--clock-glow:#a3e635;--clock-glow-soft:rgba(163,230,53,.35);--clock-glow-faint:rgba(163,230,53,.12)}
+body[data-theme=forest]{--clock-glow:#34d399;--clock-glow-soft:rgba(52,211,153,.35);--clock-glow-faint:rgba(52,211,153,.12)}
+body[data-theme=rose]{--clock-glow:#f472b6;--clock-glow-soft:rgba(244,114,182,.35);--clock-glow-faint:rgba(244,114,182,.12)}
+body[data-theme=bloom]{--clock-glow:#c084fc;--clock-glow-soft:rgba(192,132,252,.35);--clock-glow-faint:rgba(192,132,252,.12)}
+body[data-theme=sunset]{--clock-glow:#fb923c;--clock-glow-soft:rgba(251,146,60,.35);--clock-glow-faint:rgba(251,146,60,.12)}
+body[data-theme=cosmos]{--clock-glow:#fbbf24;--clock-glow-soft:rgba(251,191,36,.4);--clock-glow-faint:rgba(251,191,36,.14)}
+.empty-clock-colon{animation:clockBlink 1s step-end infinite;opacity:.3}
+@keyframes clockBlink{50%{opacity:1}}
+.empty-clock-date{margin-top:16px;font-size:14px;color:rgba(255,255,255,.6);letter-spacing:2px;font-weight:300;user-select:none}
 
 /* 最近对话 */
 .empty-recent{width:100%;max-width:500px}
