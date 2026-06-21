@@ -1,4 +1,31 @@
-.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--sub);gap:8px;padding:40px}
-.empty .logo{font-size:48px;opacity:.5}
-.empty h2{font-size:18px;color:var(--text)}
-.empty p{font-size:13px}
+/* ── 空状态（桌面专属首页） ── */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;padding:40px 24px 60px;overflow-y:auto;gap:0}
+.empty::-webkit-scrollbar{width:8px}
+
+/* 问候区 */
+.empty-greeting{text-align:center;margin-bottom:32px}
+.empty-greeting-emoji{font-size:56px;display:block;margin-bottom:12px;animation:greetingFloat 3s ease-in-out infinite}
+@keyframes greetingFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.empty-greeting h2{font-size:26px;color:var(--text);margin:0 0 4px;font-weight:700}
+.empty-greeting p{font-size:14px;color:var(--sub);margin:0}
+
+/* 统计卡片（主题自适应） */
+.empty-stats{display:flex;gap:12px;margin-bottom:32px;flex-wrap:wrap;justify-content:center}
+.empty-stat-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 20px;border-radius:16px;background:var(--accent-soft);border:1px solid transparent;width:130px;transition:all .25s;cursor:default;box-sizing:border-box;position:relative;overflow:hidden}
+.empty-stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--accent),var(--accent-alt));opacity:0;transition:opacity .25s}
+.empty-stat-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
+.empty-stat-card:hover::before{opacity:.06}
+.empty-stat-card:hover .empty-stat-num{color:var(--accent)}
+.empty-stat-icon{font-size:22px;position:relative;z-index:1}
+.empty-stat-num{font-size:22px;font-weight:700;color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;position:relative;z-index:1;transition:color .2s}
+.empty-stat-label{font-size:11px;color:var(--sub);position:relative;z-index:1}
+
+/* 最近对话 */
+.empty-recent{width:100%;max-width:500px}
+.empty-recent-title{font-size:13px;color:var(--sub);margin-bottom:10px;font-weight:600;letter-spacing:.3px}
+.empty-recent-item{padding:12px 16px;border-radius:12px;cursor:pointer;transition:all .15s;margin-bottom:6px;border:1px solid transparent}
+.empty-recent-item:hover{background:var(--surface);border-color:var(--border);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.empty-recent-top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.empty-recent-name{font-size:14px;font-weight:600;color:var(--text);flex-shrink:0}
+.empty-recent-meta{font-size:11px;color:var(--sub);flex-shrink:0}
+.empty-recent-preview{font-size:12px;color:var(--sub);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

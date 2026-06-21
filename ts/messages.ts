@@ -1,16 +1,16 @@
 // ==================== 消息渲染 (TypeScript) ====================
 function renderMessages(): void {
-  const container = document.getElementById('messages');
+  const container = document.getElementById('messagesContent');
   if (!container) return;
   const app = Alpine.store('app');
   const conv = app.current;
   if (!conv || !conv.messages || conv.messages.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="logo">🐱</div><h2>你好！我是 DeepSeek</h2><p>有什么可以帮你的吗？</p></div>';
+    container.innerHTML = '';
     return;
   }
   const visible = conv.messages.filter((m: MessageData) => m.role !== 'system');
   if (visible.length === 0) {
-    container.innerHTML = '<div class="empty"><div class="logo">🐱</div><h2>你好！我是 DeepSeek</h2><p>有什么可以帮你的吗？</p></div>';
+    container.innerHTML = '';
     return;
   }
   let html = '';

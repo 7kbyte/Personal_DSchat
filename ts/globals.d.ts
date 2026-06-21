@@ -96,6 +96,13 @@ interface AlpineStore {
     readonly currentPromptName: string;
     readonly filteredPrompts: PromptData[];
     readonly statusText: string;
+    readonly weekStartTs: number;
+    readonly weeklyConversations: number;
+    readonly weeklyTokens: number;
+    readonly topPromptName: string;
+    readonly greeting: { emoji: string; text: string; date: string };
+    readonly recentConversations: ConvData[];
+    readonly recentConvPreview: (c: ConvData) => string;
     init(): Promise<void>;
     newConv(): void;
     switchConv(id: string): void;

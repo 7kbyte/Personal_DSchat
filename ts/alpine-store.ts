@@ -133,6 +133,70 @@ document.addEventListener('alpine:init', () => {
       return names[this.model] || this.model;
     },
 
+    // ── 桌面专属首页统计 ────────────────────────
+
+    get weekStartTs(): number {
+      const now = new Date();
+      const day = now.getDay() || 7; // 周日=7
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - day + 1);
+      monday.setHours(0, 0, 0, 0);
+      return monday.getTime();
+    },
+
+    get weeklyConversations(): number {
+      return this.conversations.filter((c: ConvData) =>
+        c.messages && c.messages.length > 0 && (c.updatedAt || 0) >= this.weekStartTs
+      ).length;
+    },
+
+    get weeklyTokens(): number {
+      return this.conversations.reduce((sum: number, c: ConvData) => {
+        if (!c.messages || c.messages.length === 0) return sum;
+        if ((c.updatedAt || 0) < this.weekStartTs) return sum;
+        return sum + (c.totalTokens || 0);
+      }, 0);
+    },
+
+    get topPromptName(): string {
+      const counts: Record<string, number> = {};
+      let maxCount = 0;
+      let top = '无';
+      this.conversations.forEach((c: ConvData) => {
+        if (!c.promptId || !c.messages || c.messages.length === 0) return;
+        const key = c.promptName || c.promptId;
+        counts[key] = (counts[key] || 0) + 1;
+        if (counts[key] > maxCount) { maxCount = counts[key]; top = c.promptName || '提示词'; }
+      });
+      return top;
+    },
+
+    get greeting(): { emoji: string; text: string; date: string } {
+      const now = new Date();
+      const h = now.getHours();
+      let emoji = '☀️', text = '早上好';
+      if (h >= 12 && h < 18) { emoji = '🌤'; text = '下午好'; }
+      else if (h >= 18 || h < 5) { emoji = '🌙'; text = '晚上好'; }
+      const dateStr = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日';
+      return { emoji, text, date: dateStr };
+    },
+
+    get recentConversations(): ConvData[] {
+      return this.conversations
+        .filter((c: ConvData) => c.messages && c.messages.length > 0)
+        .sort((a: ConvData, b: ConvData) => (b.updatedAt || 0) - (a.updatedAt || 0))
+        .slice(0, 3);
+    },
+
+    get recentConvPreview(): (c: ConvData) => string {
+      return (c: ConvData) => {
+        const lastUserMsg = [...c.messages!].reverse().find((m: MessageData) => m.role === 'user');
+        if (!lastUserMsg) return '';
+        const preview = lastUserMsg.content.substring(0, 60);
+        return preview + (lastUserMsg.content.length > 60 ? '…' : '');
+      };
+    },
+
     // ═══════════════════════════════════════════════
     // 初始化
     // ═══════════════════════════════════════════════

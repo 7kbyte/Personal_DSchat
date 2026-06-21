@@ -268,14 +268,48 @@
     </div>
 
     <div class="messages" id="messages">
-        <!-- 空状态 -->
+        <!-- 空状态（桌面专属首页） -->
         <div class="empty" x-show="!$store.app.hasMessages">
-            <div class="logo">🐱</div>
-            <h2>你好！我是 DeepSeek</h2>
-            <p>有什么可以帮你的吗？</p>
+            <div class="empty-greeting">
+                <span class="empty-greeting-emoji" x-text="$store.app.greeting.emoji"></span>
+                <h2 x-text="$store.app.greeting.text"></h2>
+                <p x-text="'今天是 ' + $store.app.greeting.date"></p>
+            </div>
+
+            <div class="empty-stats">
+                <div class="empty-stat-card">
+                    <span class="empty-stat-icon">💬</span>
+                    <span class="empty-stat-num" x-text="$store.app.weeklyConversations"></span>
+                    <span class="empty-stat-label">本周对话</span>
+                </div>
+                <div class="empty-stat-card">
+                    <span class="empty-stat-icon">🪙</span>
+                    <span class="empty-stat-num" x-text="($store.app.weeklyTokens / 1000).toFixed(1) + 'K'"></span>
+                    <span class="empty-stat-label">本周消耗</span>
+                </div>
+                <div class="empty-stat-card">
+                    <span class="empty-stat-icon">🔥</span>
+                    <span class="empty-stat-num" x-text="$store.app.topPromptName"></span>
+                    <span class="empty-stat-label">常用提示词</span>
+                </div>
+            </div>
+
+            <!-- 最近对话 -->
+            <div class="empty-recent" x-show="$store.app.recentConversations.length > 0">
+                <div class="empty-recent-title">📋 最近对话</div>
+                <template x-for="c in $store.app.recentConversations" :key="c.id">
+                    <div class="empty-recent-item" @click="$store.app.switchConv(c.id)">
+                        <div class="empty-recent-top">
+                            <span class="empty-recent-name" x-text="c.title || '新对话'"></span>
+                            <span class="empty-recent-meta" x-text="c.messages.length + '条消息 · ' + $store.app.fmtRelative(c.updatedAt)"></span>
+                        </div>
+                        <div class="empty-recent-preview" x-text="(c.messages.slice().reverse().find(m => m.role === 'user')?.content || '').substring(0, 80) + ((c.messages.slice().reverse().find(m => m.role === 'user')?.content || '').length > 80 ? '…' : '')"></div>
+                    </div>
+                </template>
+            </div>
         </div>
-        <!-- 消息列表 - 由 stream.js 的 renderMessages 处理，保持兼容 -->
-        <div id="messagesContent"></div>
+        <!-- 消息内容由 renderMessages 动态生成 -->
+        <div id="messagesContent" x-show="$store.app.hasMessages"></div>
     </div>
 
     <div class="input-area">
