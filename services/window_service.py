@@ -91,15 +91,55 @@ class WindowService:
     # ── 剪贴板 ──────────────────────────────────────────────
     @staticmethod
     def copy_to_clipboard(text: str):
+        """写入 UTF-16 文本到系统剪贴板（CF_UNICODETEXT）。
+
+        注意：必须显式声明 Win32 函数的 argtypes/restype，
+        否则 64 位句柄/指针会被 ctypes 截断为 32 位，
+        导致 GlobalLock 返回无效指针、memcpy 访问冲突、剪贴板为空。
+        """
         try:
-            size = (len(text) + 1) * 2
-            hmem = ctypes.windll.kernel32.GlobalAlloc(0x2000, size)
-            ptr = ctypes.windll.kernel32.GlobalLock(hmem)
-            ctypes.cdll.msvcrt.memcpy(ptr, text.encode("utf-16-le"), size - 2)
-            ctypes.windll.kernel32.GlobalUnlock(hmem)
-            ctypes.windll.user32.OpenClipboard(0)
-            ctypes.windll.user32.EmptyClipboard()
-            ctypes.windll.user32.SetClipboardData(13, hmem)
-            ctypes.windll.user32.CloseClipboard()
+            if not text:
+                return False
+
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            user32 = ctypes.WinDLL("user32", use_last_error=True)
+            msvcrt = ctypes.WinDLL("msvcrt")
+
+            kernel32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
+            kernel32.GlobalAlloc.restype = ctypes.c_void_p
+            kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+            kernel32.GlobalLock.restype = ctypes.c_void_p
+            kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+            kernel32.GlobalUnlock.restype = ctypes.c_int
+            msvcrt.memcpy.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t]
+            msvcrt.memcpy.restype = ctypes.c_void_p
+            user32.OpenClipboard.argtypes = [ctypes.c_void_p]
+            user32.OpenClipboard.restype = ctypes.c_int
+            user32.EmptyClipboard.argtypes = []
+            user32.EmptyClipboard.restype = ctypes.c_int
+            user32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
+            user32.SetClipboardData.restype = ctypes.c_void_p
+            user32.CloseClipboard.argtypes = []
+            user32.CloseClipboard.restype = ctypes.c_int
+
+            # GMEM_MOVEABLE | GMEM_ZEROINIT，末尾补 UTF-16 空终止符
+            data = text.encode("utf-16-le") + b"\x00\x00"
+            hmem = kernel32.GlobalAlloc(0x0042, len(data))
+            if not hmem:
+                return False
+
+            ptr = kernel32.GlobalLock(hmem)
+            if not ptr:
+                kernel32.GlobalFree(hmem)
+                return False
+            msvcrt.memcpy(ptr, data, len(data))
+            kernel32.GlobalUnlock(hmem)
+
+            if not user32.OpenClipboard(0):
+                return False
+            user32.EmptyClipboard()
+            res = user32.SetClipboardData(13, hmem)  # 13 = CF_UNICODETEXT
+            user32.CloseClipboard()
+            return bool(res)
         except Exception:
-            pass
+            return False
